@@ -379,3 +379,19 @@ export async function refreshFotoUrl(storagePath: string): Promise<string | null
 
   return data?.signedUrl ?? null;
 }
+/** Verifica si un cliente tiene tratamiento activo de un servicio específico */
+export async function clienteTieneTratamientoActivo(
+  clienteId: string,
+  servicioNombre: string
+): Promise<{ tiene: boolean; error: string | null }> {
+  const { data, error } = await supabase
+    .from('tratamientos_cliente')
+    .select('id')
+    .eq('cliente_id', clienteId)
+    .eq('estado', 'activo')
+    .ilike('servicio_nombre', servicioNombre.trim())
+    .limit(1);
+
+  if (error) return { tiene: false, error: error.message };
+  return { tiene: (data?.length ?? 0) > 0, error: null };
+}

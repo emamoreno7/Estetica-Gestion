@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  AlertTriangle,
   Bell,
   Calendar,
   Check,
@@ -13,6 +14,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Sparkles,
   Trash2,
   UserPlus,
   X,
@@ -40,6 +42,7 @@ import {
   type CitaAdminListRow,
   type ClienteOpcion,
 } from './adminCitasApi';
+import { clienteTieneTratamientoActivo } from './adminTratamientosApi';
 
 type AdminOutletCtx = { onSignOut: () => void };
 
@@ -95,6 +98,7 @@ function EstadoEtiqueta({ estado }: { estado: CitaEstado }) {
 
 export default function AdminAgendaView() {
   const { onSignOut } = useOutletContext<AdminOutletCtx>();
+  const navigate = useNavigate();
   const [dia, setDia] = useState(() => new Date());
   const fechaYmd = format(dia, 'yyyy-MM-dd');
   const [rows, setRows] = useState<CitaAdminListRow[]>([]);
@@ -103,6 +107,10 @@ export default function AdminAgendaView() {
   const [accionMsg, setAccionMsg] = useState<string | null>(null);
   const [menuRow, setMenuRow] = useState<CitaAdminListRow | null>(null);
   const [saving, setSaving] = useState(false);
+  const [avisoSinTratamiento, setAvisoSinTratamiento] = useState<{
+    cliente: string;
+    servicio: string;
+  } | null>(null);
 
   // Solicitudes pendientes (turnos cargados por clientes, esperan aprobación)
   const [solicitudes, setSolicitudes] = useState<CitaAdminListRow[]>([]);
@@ -175,13 +183,29 @@ export default function AdminAgendaView() {
     if (!menuRow) return;
     setAccionMsg(null);
     setSaving(true);
-    const { error } = await actualizarEstadoCitaAdmin(menuRow.id, estado);
+    const citaActual = menuRow;
+    const { error } = await actualizarEstadoCitaAdmin(citaActual.id, estado);
     setSaving(false);
     if (error) {
       setAccionMsg(error);
       return;
     }
     setMenuRow(null);
+
+    // Si se marcó como "realizado", verificar si el cliente tiene tratamiento activo
+    if (estado === 'realizado') {
+      const { tiene } = await clienteTieneTratamientoActivo(
+        citaActual.cliente_id,
+        citaActual.servicio
+      );
+      if (!tiene) {
+        setAvisoSinTratamiento({
+          cliente: citaActual.full_name,
+          servicio: citaActual.servicio,
+        });
+      }
+    }
+
     await load();
     await loadSolicitudes();
   }
@@ -394,11 +418,61 @@ export default function AdminAgendaView() {
         Ir a hoy
       </button>
 
-      {accionMsg ? (
+            {accionMsg ? (
         <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {accionMsg}
         </div>
       ) : null}
+
+      <AnimatePresence>
+        {avisoSinTratamiento ? (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            className="mb-5 overflow-hidden rounded-3xl border border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-50/60 shadow-xl"
+            style={{ boxShadow: '0 18px 48px rgba(180,120,40,0.12)' }}
+          >
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-200/70 text-amber-800">
+                  <AlertTriangle className="h-5 w-5" />
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-amber-950">
+                  Sesión marcada como realizada, pero sin tratamiento activo
+                </p>
+                <p className="mt-0.5 text-xs text-amber-900/85">
+                  <strong>{avisoSinTratamiento.cliente}</strong> no tiene un tratamiento activo de{' '}
+                  <strong>{avisoSinTratamiento.servicio}</strong>. La sesión no se sumó al progreso.
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAvisoSinTratamiento(null)}
+                  className="rounded-full border border-amber-400/50 bg-white/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-amber-900 transition hover:bg-white"
+                >
+                  Después
+                </button>
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    setAvisoSinTratamiento(null);
+                    navigate('/admin/tratamientos');
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-white shadow-md transition hover:bg-amber-700"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Asignar tratamiento
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center gap-3 py-24 text-[#003D5B]/55">

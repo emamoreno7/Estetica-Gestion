@@ -15,6 +15,7 @@ import {
   type PortalSesionRow,
   type PortalTratamientoRow,
 } from '@/lib/portalTratamientosApi';
+  import { getImagenServicio } from '@/lib/servicioImagen';
 
 export type PortalSesionLite = {
   nro: number;
@@ -160,7 +161,7 @@ function tratamientoToActiveTreatment(
             maximumFractionDigits: 0,
           }).format(t.precio_total)
         : 'Consultá en sede',
-    imagen: '/body-up.png', // imagen por defecto
+        imagen: getImagenServicio(t.servicio_nombre),
     sesionesCompletadas: t.sesiones_realizadas,
     totalSesiones: t.sesiones_totales,
     proximaSesion: fechaProxima,

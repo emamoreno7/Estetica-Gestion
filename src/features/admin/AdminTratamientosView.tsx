@@ -29,6 +29,7 @@ import {
 import AsignarTratamientoModal from './AsignarTratamientoModal';
 import RegistrarSesionModal from './RegistrarSesionModal';
 import SubirFotoModal from './SubirFotoModal';
+import { getImagenServicio } from '@/lib/servicioImagen';
 
 type AdminOutletCtx = { onSignOut: () => void };
 
@@ -285,7 +286,16 @@ export default function AdminTratamientosView() {
                   className="rounded-3xl border border-[#F2D7D5]/65 bg-[#FDF8F5]/98 p-4 shadow-md transition hover:border-[#BFC9A2]/45 hover:shadow-lg sm:p-5"
                   style={{ boxShadow: '0 14px 40px rgba(0,61,91,0.07)' }}
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                    {/* Thumbnail */}
+                    <div className="shrink-0">
+                      <img
+                        src={getImagenServicio(t.servicio_nombre)}
+                        alt={t.servicio_nombre}
+                        className="h-20 w-20 rounded-2xl object-cover shadow-md sm:h-24 sm:w-24"
+                        style={{ boxShadow: '0 8px 20px rgba(0,61,91,0.10)' }}
+                      />
+                    </div>
                     {/* Info principal */}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
