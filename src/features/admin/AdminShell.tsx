@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Calculator,
   CalendarDays,
+  HeartPulse,
   Home,
   LayoutDashboard,
   LogOut,
@@ -35,6 +36,7 @@ const ITEMS: Item[] = [
   { to: '/admin/aprobar-usuarios', label: 'Aprobar usuarios', icon: UserCheck, badgeKey: 'pending' },
   { to: '/admin/clientes', label: 'Clientes', icon: Users },
   { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays },
+  { to: '/admin/tratamientos', label: 'Tratamientos', icon: HeartPulse },
   { to: '/admin/servicios', label: 'Servicios', icon: Sparkles },
   { to: '/admin/costos', label: 'Costos y precios', icon: Calculator },
   { to: '/admin/auditoria-precios', label: 'Auditoría precios', icon: ShieldAlert, badgeKey: 'audit' },

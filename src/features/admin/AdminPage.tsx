@@ -3,6 +3,7 @@ import AdminOverview from '@/features/admin/AdminOverview';
 import AdminClientsView from '@/features/admin/AdminClientsView';
 import AdminAgendaView from '@/features/admin/AdminAgendaView';
 import AdminServicesView from '@/features/admin/AdminServicesView';
+import AdminTratamientosView from '@/features/admin/AdminTratamientosView';
 import AdminCostosView from '@/features/admin/AdminCostosView';
 import AdminAuditoriaPreciosView from '@/features/admin/AdminAuditoriaPreciosView';
 import AprobarUsuariosPage from '@/features/admin/AprobarUsuariosPage';
@@ -68,6 +69,7 @@ export default function AdminPage() {
         <Route path="clientes" element={<AdminClientsView />} />
         <Route path="aprobar-usuarios" element={<AprobarUsuariosPage />} />
         <Route path="agenda" element={<AdminAgendaView />} />
+        <Route path="tratamientos" element={<AdminTratamientosView />} />
         <Route path="servicios" element={<AdminServicesView />} />
         <Route path="costos" element={<AdminCostosView />} />
         <Route path="auditoria-precios" element={<AdminAuditoriaPreciosView />} />

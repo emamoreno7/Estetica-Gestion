@@ -671,7 +671,7 @@ function CitasBookingModal(props: {
   userId: string;
   onClose: () => void;
   onComplete: (c: CitaClienteRow | null) => Promise<void>;
-}): JSX.Element {
+}): JSX.Element | null {
   const todasFranjas = useMemo(() => generarFranjasComerciales(), []);
 
   const [wizardStep, setWizardStep] = useState<1 | 2>(1);
@@ -992,7 +992,7 @@ function BookingSuccessCrossSellModal(props: {
   cita: CitaClienteRow;
   nombreCliente: string;
   onClose: () => void;
-}): JSX.Element {
+}): JSX.Element | null {
   const reco = obtenerCrossSellPorServicio(props.cita.servicio);
   const fecha = parseCitaMomentLocal(props.cita);
   const comprobanteHref = bookingComprobanteWhatsAppHref(
