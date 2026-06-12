@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { useAuth } from '@/context/AuthContext';
 import { clienteDisplayName, firstNameOrFriendly } from '@/lib/perfilCliente';
@@ -6,6 +6,15 @@ import {
   deriveActiveTreatmentFromPerfil,
   type PortalActiveTreatment,
 } from '@/lib/portalTreatment';
+import {
+  fetchFotosCliente,
+  fetchSesionesCliente,
+  fetchTratamientoActivoCliente,
+  refreshSignedUrl,
+  type PortalFotoRow,
+  type PortalSesionRow,
+  type PortalTratamientoRow,
+} from '@/lib/portalTratamientosApi';
 
 export type PortalSesionLite = {
   nro: number;
@@ -37,10 +46,9 @@ export type PortalClienteCtxValue = PortalClienteInfo & {
   activeTreatment: PortalActiveTreatment | null;
   sessions: PortalSesionLite[];
   beforeAfterPairs: PortalAntesDespues[];
+  loadingTratamiento: boolean;
+  refreshTratamiento: () => Promise<void>;
 };
-
-const portalSessions: PortalSesionLite[] = [];
-const portalBeforeAfterPairs: PortalAntesDespues[] = [];
 
 const PortalClienteCtx = createContext<PortalClienteCtxValue | null>(null);
 
@@ -50,6 +58,121 @@ export function usePortalCliente(): PortalClienteCtxValue {
   return v;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+/** Convierte una sesión de Supabase al formato que esperan las vistas */
+function mapSesionToLite(
+  row: PortalSesionRow,
+  sesionesRealizadas: number,
+  fotos: PortalFotoRow[]
+): PortalSesionLite {
+  const ahora = new Date();
+  const fechaSesion = new Date(row.fecha_sesion + 'T12:00:00');
+  const completada = fechaSesion <= ahora || row.numero_sesion <= sesionesRealizadas;
+  const esProxima = row.numero_sesion === sesionesRealizadas + 1;
+
+  const foto = fotos.find((f) => f.numero_sesion === row.numero_sesion);
+
+  return {
+    nro: row.numero_sesion,
+    fecha: row.fecha_sesion,
+    estado: completada ? 'completada' : esProxima ? 'proxima' : 'programada',
+    notas: row.observaciones ?? 'Sin observaciones',
+    foto: foto?.url_foto ?? '',
+  };
+}
+
+/** Construye los pares antes/después a partir de las fotos */
+function buildBeforeAfterPairs(
+  fotos: PortalFotoRow[],
+  servicioNombre: string
+): PortalAntesDespues[] {
+  if (fotos.length < 2) return [];
+
+  const iniciales = fotos.filter((f) => f.tipo === 'inicial');
+  const finales = fotos.filter((f) => f.tipo === 'final');
+  const progresos = fotos.filter((f) => f.tipo === 'progreso');
+
+  const pairs: PortalAntesDespues[] = [];
+
+  // Par 1: inicial vs final
+  if (iniciales.length > 0 && finales.length > 0) {
+    pairs.push({
+      title: `${servicioNombre} · Inicio vs Final`,
+      improvement: 'Resultado final',
+      before: iniciales[0].url_foto,
+      after: finales[finales.length - 1].url_foto,
+    });
+  }
+
+  // Par 2: inicial vs última de progreso (si no hay final)
+  if (iniciales.length > 0 && finales.length === 0 && progresos.length > 0) {
+    pairs.push({
+      title: `${servicioNombre} · Inicio vs Hoy`,
+      improvement: 'En progreso',
+      before: iniciales[0].url_foto,
+      after: progresos[progresos.length - 1].url_foto,
+    });
+  }
+
+  // Pares adicionales: comparar progresos entre sí
+  if (iniciales.length > 0 && progresos.length > 1) {
+    progresos.forEach((p, idx) => {
+      if (idx === 0) return;
+      pairs.push({
+        title: `${servicioNombre} · Sesión ${progresos[0].numero_sesion ?? '?'} vs ${p.numero_sesion ?? '?'}`,
+        improvement: 'Evolución',
+        before: progresos[0].url_foto,
+        after: p.url_foto,
+      });
+    });
+  }
+
+  return pairs;
+}
+
+/** Adapta el tratamiento real al formato PortalActiveTreatment */
+function tratamientoToActiveTreatment(
+  t: PortalTratamientoRow,
+  sesiones: PortalSesionRow[]
+): PortalActiveTreatment {
+  // Próxima sesión: la primera no completada
+  const proximaSesion = sesiones.find((s) => s.numero_sesion > t.sesiones_realizadas);
+  const fechaProxima = proximaSesion?.fecha_sesion ?? t.fecha_inicio;
+  const horaProxima = proximaSesion?.hora_sesion ?? '—';
+
+  return {
+    id: t.id,
+    nombre: t.servicio_nombre,
+    categoria: 'Tratamiento Amore',
+    descripcion: t.notas || `${t.servicio_nombre} · Plan personalizado`,
+    profesional: t.profesional,
+    zona: t.zona,
+    sucursal: `Sede ${t.zona}`,
+    fechaInicio: t.fecha_inicio,
+    precio:
+      t.precio_total > 0
+        ? new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0,
+          }).format(t.precio_total)
+        : 'Consultá en sede',
+    imagen: '/body-up.png', // imagen por defecto
+    sesionesCompletadas: t.sesiones_realizadas,
+    totalSesiones: t.sesiones_totales,
+    proximaSesion: fechaProxima,
+    horaProxima: horaProxima ? horaProxima.slice(0, 5) : '—',
+    fechaPlanPendiente: !proximaSesion,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROVIDER
+// ═══════════════════════════════════════════════════════════════
+
 export function PortalClienteProvider({
   sessionUser,
   children,
@@ -58,6 +181,48 @@ export function PortalClienteProvider({
   children: ReactNode;
 }) {
   const { perfilCliente } = useAuth();
+
+  const [tratamientoReal, setTratamientoReal] = useState<PortalTratamientoRow | null>(null);
+  const [sesionesReales, setSesionesReales] = useState<PortalSesionRow[]>([]);
+  const [fotosReales, setFotosReales] = useState<PortalFotoRow[]>([]);
+  const [loadingTratamiento, setLoadingTratamiento] = useState(true);
+
+  // Cargar datos reales desde Supabase
+  async function cargarTratamiento() {
+    setLoadingTratamiento(true);
+    const { tratamiento } = await fetchTratamientoActivoCliente(sessionUser.id);
+    if (!tratamiento) {
+      setTratamientoReal(null);
+      setSesionesReales([]);
+      setFotosReales([]);
+      setLoadingTratamiento(false);
+      return;
+    }
+    setTratamientoReal(tratamiento);
+
+    // Cargar sesiones y fotos en paralelo
+    const [{ rows: ses }, { rows: fts }] = await Promise.all([
+      fetchSesionesCliente(tratamiento.id),
+      fetchFotosCliente(tratamiento.id),
+    ]);
+
+    // Refrescar URLs firmadas (caducan)
+    const fotosConUrls = await Promise.all(
+      fts.map(async (f) => {
+        const nuevaUrl = await refreshSignedUrl(f.storage_path);
+        return { ...f, url_foto: nuevaUrl ?? f.url_foto };
+      })
+    );
+
+    setSesionesReales(ses);
+    setFotosReales(fotosConUrls);
+    setLoadingTratamiento(false);
+  }
+
+  useEffect(() => {
+    void cargarTratamiento();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionUser.id]);
 
   const value = useMemo<PortalClienteCtxValue>(() => {
     const md = (sessionUser.user_metadata || {}) as Record<string, unknown>;
@@ -96,6 +261,26 @@ export function PortalClienteProvider({
       perfilCliente?.tratamiento_interes?.trim() ||
       null;
 
+    // ⚡ Si hay tratamiento real, usarlo. Si no, usar el placeholder anterior.
+    const activeTreatment = tratamientoReal
+      ? tratamientoToActiveTreatment(tratamientoReal, sesionesReales)
+      : deriveActiveTreatmentFromPerfil(perfilCliente ?? null, tratamientoMd);
+
+    // Sesiones para la vista
+        const sessions: PortalSesionLite[] = tratamientoReal
+      ? sesionesReales.map((s) =>
+          mapSesionToLite(s, tratamientoReal.sesiones_realizadas, fotosReales)
+        )
+      : [];
+
+    // Pares antes/después
+    const beforeAfterPairs: PortalAntesDespues[] = tratamientoReal
+      ? buildBeforeAfterPairs(fotosReales, tratamientoReal.servicio_nombre)
+      : [];
+
+    // Puntos: del tratamiento real, o 0
+    const loyaltyPoints = tratamientoReal?.puntos_acumulados ?? 0;
+
     return {
       displayName,
       greetingName: firstNameOrFriendly(displayName),
@@ -103,13 +288,16 @@ export function PortalClienteProvider({
       phoneDisplay,
       photoUrl,
       memberSinceLabel,
-      loyaltyPoints: 0,
+      loyaltyPoints,
       tratamientoInteresLabel: tratamientoMd,
-      activeTreatment: deriveActiveTreatmentFromPerfil(perfilCliente ?? null, tratamientoMd),
-      sessions: portalSessions,
-      beforeAfterPairs: portalBeforeAfterPairs,
+      activeTreatment,
+      sessions,
+      beforeAfterPairs,
+      loadingTratamiento,
+      refreshTratamiento: cargarTratamiento,
     };
-  }, [sessionUser, perfilCliente]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionUser, perfilCliente, tratamientoReal, sesionesReales, fotosReales, loadingTratamiento]);
 
   return <PortalClienteCtx.Provider value={value}>{children}</PortalClienteCtx.Provider>;
 }
