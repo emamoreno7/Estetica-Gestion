@@ -165,3 +165,52 @@ export async function insertarReservaCliente(opts: {
 
   return { cita: data as CitaClienteRow, error: null };
 }
+// ═══════════════════════════════════════════════════════════════
+// ADMIN — Listar y editar citas
+// ═══════════════════════════════════════════════════════════════
+
+/** Lista TODAS las citas de un cliente (admin, ordenadas por fecha desc) */
+export async function listCitasCliente(clienteId: string): Promise<{
+  rows: CitaClienteRow[];
+  error: string | null;
+}> {
+  const { data, error } = await supabase
+    .from('citas')
+    .select('id, cliente_id, servicio, fecha, hora, estado')
+    .eq('cliente_id', clienteId)
+    .order('fecha', { ascending: false })
+    .order('hora', { ascending: false });
+
+  if (error) return { rows: [], error: error.message };
+  return { rows: (data ?? []) as CitaClienteRow[], error: null };
+}
+
+/** Actualiza fecha/hora/estado de una cita (admin) */
+export async function actualizarCitaAdmin(
+  citaId: string,
+  cambios: {
+    fecha?: string;
+    hora?: string;
+    estado?: CitaEstado;
+  }
+): Promise<{ error: string | null }> {
+  const patch: Record<string, unknown> = {};
+  if (cambios.fecha !== undefined) patch.fecha = cambios.fecha;
+  if (cambios.hora !== undefined) patch.hora = cambios.hora;
+  if (cambios.estado !== undefined) patch.estado = cambios.estado;
+
+  if (Object.keys(patch).length === 0) return { error: null };
+
+  const { error } = await supabase.from('citas').update(patch).eq('id', citaId);
+
+  if (error) {
+    const dup = `${error.code ?? ''}${error.message}`.toLowerCase();
+    const msg =
+      dup.includes('unique') || dup.includes('duplicate')
+        ? 'Ese horario ya está ocupado por otra cita. Elegí otro.'
+        : error.message;
+    return { error: msg };
+  }
+
+  return { error: null };
+}

@@ -38,11 +38,11 @@ import {
   listPerfilesClientesAdmin,
 } from './adminApi';
 import ActivateClientModal from './ActivateClientModal';
+import ClienteDrawer from './ClienteDrawer';
 
 type AdminOutletCtx = { onSignOut: () => void };
 
 type StatusFilter = 'all' | PerfilRowStatus;
-
 const STATUS_TABS: { id: StatusFilter; label: string }[] = [
   { id: 'all', label: 'Todos' },
   { id: 'pending', label: 'Pendientes' },
@@ -82,6 +82,7 @@ export default function AdminClientsView() {
     null
   );
   const [fichaTarget, setFichaTarget] = useState<PerfilClienteRow | null>(null);
+  const [drawerTarget, setDrawerTarget] = useState<PerfilClienteRow | null>(null);
   const [pdfBusy, setPdfBusy] = useState<'download' | 'print' | null>(null);
 
   const statusFilter = statusFromParam(searchParams.get('status'));
@@ -352,6 +353,13 @@ export default function AdminClientsView() {
                         >
                           <ClipboardList className="h-3.5 w-3.5" /> Ficha
                         </button>
+                                                <button
+                          type="button"
+                          onClick={() => setDrawerTarget(p)}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-[#003D5B] px-3 py-2 text-[11px] font-semibold text-white hover:opacity-90"
+                        >
+                          <UserCheck className="h-3.5 w-3.5" /> Ver completa
+                        </button>
                         {(p.status === 'pending' || p.status === 'blocked') && (
                           <button
                             type="button"
@@ -559,6 +567,17 @@ export default function AdminClientsView() {
               </div>
             </motion.div>
           </motion.div>
+        ) : null}
+      </AnimatePresence>
+            <AnimatePresence>
+        {drawerTarget ? (
+          <ClienteDrawer
+            cliente={drawerTarget}
+            onClose={() => {
+              setDrawerTarget(null);
+              void load();
+            }}
+          />
         ) : null}
       </AnimatePresence>
     </AdminShell>

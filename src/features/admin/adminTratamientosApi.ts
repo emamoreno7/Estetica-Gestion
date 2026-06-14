@@ -276,6 +276,31 @@ export async function eliminarSesion(id: string): Promise<{ error: string | null
   const { error } = await supabase.from('tratamiento_sesiones').delete().eq('id', id);
   return { error: error ? mapRlsError(error) : null };
 }
+/** Actualizar fecha/hora/observaciones de una sesión existente */
+export async function actualizarSesion(
+  sesionId: string,
+  cambios: {
+    fechaSesion?: string;
+    horaSesion?: string | null;
+    profesional?: string;
+    observaciones?: string | null;
+  }
+): Promise<{ error: string | null }> {
+  const patch: Record<string, unknown> = {};
+  if (cambios.fechaSesion !== undefined) patch.fecha_sesion = cambios.fechaSesion;
+  if (cambios.horaSesion !== undefined) patch.hora_sesion = cambios.horaSesion;
+  if (cambios.profesional !== undefined) patch.profesional = cambios.profesional;
+  if (cambios.observaciones !== undefined) patch.observaciones = cambios.observaciones;
+
+  if (Object.keys(patch).length === 0) return { error: null };
+
+  const { error } = await supabase
+    .from('tratamiento_sesiones')
+    .update(patch)
+    .eq('id', sesionId);
+
+  return { error: error ? mapRlsError(error) : null };
+}
 
 // ═══════════════════════════════════════════════════════════════
 // FOTOS
