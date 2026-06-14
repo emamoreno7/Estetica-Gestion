@@ -8,6 +8,7 @@ import {
   type SesionRow,
   type TratamientoClienteRow,
 } from './adminTratamientosApi';
+import { insertNotificacion } from '@/lib/notificacionesApi';
 
 const PROFESIONALES = ['Ailen Carro', 'Ayelen', 'Equipo Amore'] as const;
 
@@ -58,7 +59,7 @@ export default function RegistrarSesionModal(props: {
 
     const puntosNum = Number.parseInt(puntos, 10);
 
-    const { error } = await registrarSesion({
+    const { error, sesion } = await registrarSesion({
       tratamientoId: tratamiento.id,
       numeroSesion: proximoNumero,
       fechaSesion,
@@ -74,6 +75,16 @@ export default function RegistrarSesionModal(props: {
       setErrMsg(error);
       return;
     }
+
+    // 🔔 Notificar al cliente
+    void insertNotificacion({
+      clienteId: tratamiento.cliente_id,
+      kind: 'sesion_registrada',
+      title: '¡Sesión registrada! 💪',
+      body: `Tu sesión N° ${proximoNumero} fue registrada por ${profesional}. ¡Seguís avanzando en tu tratamiento!`,
+      tratamientoId: tratamiento.id,
+      sesionId: sesion?.id ?? null,
+    });
 
     await props.onCreated();
   }

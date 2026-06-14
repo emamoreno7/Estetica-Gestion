@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Camera,
   ImagePlus,
+  Info,
   Loader2,
   Sparkles,
   Trophy,
@@ -15,6 +16,7 @@ import {
   type FotoTipo,
   type TratamientoClienteRow,
 } from './adminTratamientosApi';
+import { insertNotificacion } from '@/lib/notificacionesApi';
 
 const TIPOS_FOTO: { value: FotoTipo; label: string; descripcion: string; icon: React.ReactNode }[] =
   [
@@ -107,6 +109,20 @@ export default function SubirFotoModal(props: {
       setErrMsg(error);
       return;
     }
+
+    // 🔔 Notificar al cliente
+    const tipoLabel =
+      tipo === 'inicial' ? 'foto inicial' :
+      tipo === 'progreso' ? 'foto de progreso' :
+      'foto final';
+
+    void insertNotificacion({
+      clienteId: tratamiento.cliente_id,
+      kind: 'foto_subida',
+      title: 'Nueva foto en tu evolución 📸',
+      body: `El equipo Amore subió una ${tipoLabel} a tu tratamiento. ¡Entrá a la pestaña Evolución para verla!`,
+      tratamientoId: tratamiento.id,
+    });
 
     // Limpiar preview
     if (preview) URL.revokeObjectURL(preview);
@@ -204,6 +220,22 @@ export default function SubirFotoModal(props: {
               ))}
             </div>
           </section>
+                    {/* Aviso comparación antes/después */}
+          <div
+            className="mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5"
+            style={{
+              borderColor: 'rgba(184,149,110,0.35)',
+              background: 'rgba(184,149,110,0.08)',
+            }}
+          >
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#B8956E]" />
+            <p className="text-[10px] leading-relaxed text-[#003D5B]/75">
+              <strong className="text-[#003D5B]">Tip:</strong> para que el cliente vea la comparación
+              en su pestaña <em>Evolución</em>, necesitás cargar al menos <strong>2 fotos</strong>:
+              una <strong>"Antes"</strong> y otra <strong>"Progreso"</strong> o{' '}
+              <strong>"Después"</strong>.
+            </p>
+          </div>
 
           {/* ── Selector de archivo ── */}
           <section className="mt-6">

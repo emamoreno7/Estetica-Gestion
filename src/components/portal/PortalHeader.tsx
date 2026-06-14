@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { BrandWordmark } from '@/components/branding/BrandWordmark';
 import { useAuth } from '@/context/AuthContext';
 import { usePortalNotifications } from '@/context/PortalNotificationsContext';
+import { notifTargetView } from '@/lib/notificacionesApi';
 import { clearLocalAppData } from '@/lib/clearLocalAppData';
 import { updatePerfilClienteFields } from '@/lib/perfilCliente';
 
@@ -226,14 +227,16 @@ export function PortalHeader({
                       ) : (
                         notifications.map((n) => (
                           <button
-                            key={n.id}
-                            type="button"
-                            className="w-full border-b px-4 py-3 text-left transition hover:bg-[rgba(242,215,213,0.2)]"
-                            style={{ borderColor: 'rgba(242,215,213,0.35)' }}
-                            onClick={() => {
-                              markAsRead(n.id);
-                            }}
-                          >
+  key={n.id}
+  type="button"
+  className="w-full border-b px-4 py-3 text-left transition hover:bg-[rgba(242,215,213,0.2)]"
+  style={{ borderColor: 'rgba(242,215,213,0.35)' }}
+  onClick={() => {
+    markAsRead(n.id);
+    setNotifOpen(false);
+    onNavigate(notifTargetView(n.kind));
+  }}
+>
                             <div className="flex items-start gap-2">
                               {!n.read ? (
                                 <span

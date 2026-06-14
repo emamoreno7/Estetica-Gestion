@@ -11,15 +11,30 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import type { CitaClienteRow } from '@/lib/citasApi';
 import { parseCitaMomentLocal } from '@/lib/citasApi';
+import { useAuth } from '@/context/AuthContext';
+import {
+  fetchNotificacionesCliente,
+  insertNotificacion,
+  marcarNotifLeida,
+  marcarTodasLeidas,
+  type NotificacionRow,
+} from '@/lib/notificacionesApi';
 
-export type PortalNotificationKind = 'cita_confirmada' | 'admin_mensaje';
+// ═══════════════════════════════════════════════════════════════
+// TIPOS PÚBLICOS — misma interfaz de antes, PortalHeader no cambia
+// ═══════════════════════════════════════════════════════════════
+
+export type PortalNotificationKind =
+  | 'cita_confirmada'
+  | 'admin_mensaje'
+  | 'sesion_registrada'
+  | 'foto_subida';
 
 export type PortalNotificationItem = {
   id: string;
   kind: PortalNotificationKind;
   title: string;
   body: string;
-  /** ISO fecha de la notificación o de la cita asociada */
   createdAt: string;
   read: boolean;
 };
@@ -27,11 +42,16 @@ export type PortalNotificationItem = {
 type PortalNotificationsCtx = {
   notifications: PortalNotificationItem[];
   unreadCount: number;
+  loading: boolean;
   markAsRead: (id: string) => void;
   markAllRead: () => void;
-  /** Nueva cita guardada desde el wizard del portal → suma badge y aparece en el panel. */
   notifyCitaConfirmada: (cita: CitaClienteRow) => void;
+  refresh: () => Promise<void>;
 };
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
 
 const PortalNotificationsContext = createContext<PortalNotificationsCtx | null>(null);
 
@@ -44,76 +64,107 @@ function fechaCitaHumana(cita: CitaClienteRow): string {
   }
 }
 
-function seededNotifications(): PortalNotificationItem[] {
-  const tPast = new Date(Date.now() - 86400000 * 2).toISOString();
-  const t0 = new Date().toISOString();
-  return [
-    {
-      id: 'seed-admin-welcome',
-      kind: 'admin_mensaje',
-      title: 'Mensaje de recepción',
-      body:
-        'Somos equipo Amore. Si necesitás reagendar o tenés alguna consulta antes de tu visita, escribinos cuando quieras.',
-      createdAt: tPast,
-      read: false,
-    },
-    {
-      id: 'seed-recordatorio-general',
-      kind: 'admin_mensaje',
-      title: 'Recordatorio',
-      body: 'Llegá con 10 minutos de anticipación para completar tu check-in tranquila.',
-      createdAt: t0,
-      read: true,
-    },
-  ];
+function rowToItem(row: NotificacionRow): PortalNotificationItem {
+  return {
+    id: row.id,
+    kind: row.kind,
+    title: row.title,
+    body: row.body,
+    createdAt: row.created_at,
+    read: row.read,
+  };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PROVIDER
+// ═══════════════════════════════════════════════════════════════
+
 export function PortalNotificationsProvider({ children }: { children: ReactNode }) {
+  const { session } = useAuth();
+  const clienteId = session?.user?.id ?? null;
+
   const [notifications, setNotifications] = useState<PortalNotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // ─── Fetch desde Supabase ───────────────────────────────────
+  const refresh = useCallback(async () => {
+    if (!clienteId) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const { rows } = await fetchNotificacionesCliente(clienteId);
+    setNotifications(rows.map(rowToItem));
+    setLoading(false);
+  }, [clienteId]);
 
   useEffect(() => {
-    setNotifications(seededNotifications());
-  }, []);
+    void refresh();
+  }, [refresh]);
 
-  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
-
+  // ─── Marcar leída — optimista + persiste en Supabase ───────
   const markAsRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    void marcarNotifLeida(id);
   }, []);
 
+  // ─── Marcar todas leídas ────────────────────────────────────
   const markAllRead = useCallback(() => {
+    if (!clienteId) return;
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
+    void marcarTodasLeidas(clienteId);
+  }, [clienteId]);
 
-  const notifyCitaConfirmada = useCallback((cita: CitaClienteRow) => {
-    const when = fechaCitaHumana(cita);
-    const id = `cita-${cita.id ?? `${cita.fecha}-${cita.hora}`}-${Date.now()}`;
-    const item: PortalNotificationItem = {
-      id,
-      kind: 'cita_confirmada',
-      title: 'Cita confirmada',
-      body: `Tu turno de ${cita.servicio} quedó registrado para ${when}. Podés revisarlo en Mis citas.`,
-      createdAt: new Date().toISOString(),
-      read: false,
-    };
-    setNotifications((prev) => [item, ...prev]);
-  }, []);
+  // ─── Cita confirmada desde el wizard del portal ─────────────
+  const notifyCitaConfirmada = useCallback(
+    (cita: CitaClienteRow) => {
+      if (!clienteId) return;
+      const when = fechaCitaHumana(cita);
+      const title = 'Cita confirmada ✓';
+      const body = `Tu turno de ${cita.servicio} quedó registrado para ${when}. Podés revisarlo en Mis citas.`;
 
-  const value = useMemo(
+      // Mostrar inmediatamente en UI
+      const localItem: PortalNotificationItem = {
+        id: `cita-local-${cita.id ?? Date.now()}`,
+        kind: 'cita_confirmada',
+        title,
+        body,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+      setNotifications((prev) => [localItem, ...prev]);
+
+      // Persistir en Supabase en background
+      void insertNotificacion({ clienteId, kind: 'cita_confirmada', title, body });
+    },
+    [clienteId]
+  );
+
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications]
+  );
+
+  const value = useMemo<PortalNotificationsCtx>(
     () => ({
       notifications,
       unreadCount,
+      loading,
       markAsRead,
       markAllRead,
       notifyCitaConfirmada,
+      refresh,
     }),
-    [notifications, unreadCount, markAsRead, markAllRead, notifyCitaConfirmada]
+    [notifications, unreadCount, loading, markAsRead, markAllRead, notifyCitaConfirmada, refresh]
   );
 
   return (
-    <PortalNotificationsContext.Provider value={value}>{children}</PortalNotificationsContext.Provider>
+    <PortalNotificationsContext.Provider value={value}>
+      {children}
+    </PortalNotificationsContext.Provider>
   );
 }
 
