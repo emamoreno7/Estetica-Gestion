@@ -12,6 +12,8 @@ const ZONAS = ['Rivadavia'] as const;
 export default function AsignarTratamientoModal(props: {
   onClose: () => void;
   onCreated: () => void | Promise<void>;
+  /** Si se pasa, el cliente queda preseleccionado y bloqueado */
+  clientePreseleccionadoId?: string;
 }) {
   // ── Paso 1: Cliente ──
   const [termino, setTermino] = useState('');
@@ -51,6 +53,21 @@ export default function AsignarTratamientoModal(props: {
     [serviciosPlanos, servicioId]
   );
 
+    // Si viene cliente preseleccionado (desde el drawer), cargarlo de una
+  useEffect(() => {
+    if (!props.clientePreseleccionadoId || cliente) return;
+    let cancel = false;
+    (async () => {
+      const { rows } = await buscarClientesActivos('', 100);
+      if (cancel) return;
+      const found = rows.find((r) => r.id === props.clientePreseleccionadoId);
+      if (found) setCliente(found);
+    })();
+    return () => {
+      cancel = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.clientePreseleccionadoId]);
   // Buscar clientes con debounce
   useEffect(() => {
     let cancel = false;

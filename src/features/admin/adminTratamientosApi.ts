@@ -420,3 +420,56 @@ export async function clienteTieneTratamientoActivo(
   if (error) return { tiene: false, error: error.message };
   return { tiene: (data?.length ?? 0) > 0, error: null };
 }
+// ═══════════════════════════════════════════════════════════════
+// AGRUPACIÓN POR CLIENTE (para vista de tratamientos reorganizada)
+// ═══════════════════════════════════════════════════════════════
+
+export type ClienteAgrupado = {
+  cliente_id: string;
+  cliente_nombre: string;
+  cliente_telefono: string;
+  tratamientos: TratamientoClienteRow[];
+  cantActivos: number;
+  cantTotal: number;
+  puntosTotales: number;
+};
+
+/** Agrupa una lista plana de tratamientos por cliente, con stats agregadas */
+export function agruparPorCliente(rows: TratamientoClienteRow[]): ClienteAgrupado[] {
+  const map = new Map<string, ClienteAgrupado>();
+
+  for (const t of rows) {
+    let g = map.get(t.cliente_id);
+    if (!g) {
+      g = {
+        cliente_id: t.cliente_id,
+        cliente_nombre: t.cliente_nombre ?? 'Cliente Amore',
+        cliente_telefono: t.cliente_telefono ?? '',
+        tratamientos: [],
+        cantActivos: 0,
+        cantTotal: 0,
+        puntosTotales: 0,
+      };
+      map.set(t.cliente_id, g);
+    }
+    g.tratamientos.push(t);
+    g.cantTotal += 1;
+    g.puntosTotales += t.puntos_acumulados;
+    if (t.estado === 'activo') g.cantActivos += 1;
+  }
+
+  // Ordenar tratamientos internos: activos primero, luego por fecha desc
+  for (const g of map.values()) {
+    g.tratamientos.sort((a, b) => {
+      if (a.estado === 'activo' && b.estado !== 'activo') return -1;
+      if (a.estado !== 'activo' && b.estado === 'activo') return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }
+
+  // Ordenar grupos: más activos primero, luego alfabético
+  return Array.from(map.values()).sort((a, b) => {
+    if (b.cantActivos !== a.cantActivos) return b.cantActivos - a.cantActivos;
+    return a.cliente_nombre.localeCompare(b.cliente_nombre);
+  });
+}

@@ -33,6 +33,7 @@ import {
 } from './adminTratamientosApi';
 import { listCitasCliente, type CitaClienteRow } from '@/lib/citasApi';
 import RegistrarSesionModal from './RegistrarSesionModal';
+import AsignarTratamientoModal from './AsignarTratamientoModal';
 import SubirFotoModal from './SubirFotoModal';
 import EditarCitaModal from './EditarCitaModal';
 import EditarSesionModal from './EditarSesionModal';
@@ -71,6 +72,7 @@ export default function ClienteDrawer(props: {
   const [fotoTrat, setFotoTrat] = useState<TratamientoClienteRow | null>(null);
   const [editarCita, setEditarCita] = useState<CitaClienteRow | null>(null);
   const [editarSesion, setEditarSesion] = useState<SesionRow | null>(null);
+  const [asignarOpen, setAsignarOpen] = useState(false);
 
   // ─── Cargar tratamientos del cliente ──────────────────────
   const loadTratamientos = useCallback(async () => {
@@ -243,7 +245,7 @@ export default function ClienteDrawer(props: {
 
             {/* ─── Contenido ──────────────────────────────── */}
             <div className="flex-1 overflow-y-auto px-6 py-5 sm:px-8">
-              {tab === 'tratamientos' ? (
+                            {tab === 'tratamientos' ? (
                 <TabTratamientos
                   loading={loadingTrat}
                   tratamientos={tratamientos}
@@ -252,6 +254,7 @@ export default function ClienteDrawer(props: {
                   onCambiarEstado={(t, e) => void cambiarEstadoTrat(t, e)}
                   onEliminar={(t) => void borrarTrat(t)}
                   onEditarSesion={(s) => setEditarSesion(s)}
+                  onAsignarNuevo={() => setAsignarOpen(true)}
                 />
               ) : null}
 
@@ -271,6 +274,16 @@ export default function ClienteDrawer(props: {
 
       {/* ─── Modales anidados ────────────────────────────── */}
       <AnimatePresence>
+                {asignarOpen ? (
+          <AsignarTratamientoModal
+            clientePreseleccionadoId={cliente.id}
+            onClose={() => setAsignarOpen(false)}
+            onCreated={async () => {
+              setAsignarOpen(false);
+              await loadTratamientos();
+            }}
+          />
+        ) : null}
         {sesionTrat ? (
           <RegistrarSesionModal
             tratamiento={sesionTrat}
@@ -363,6 +376,7 @@ function TabTratamientos(props: {
   onCambiarEstado: (t: TratamientoClienteRow, e: TratamientoEstado) => void;
   onEliminar: (t: TratamientoClienteRow) => void;
   onEditarSesion: (s: SesionRow) => void;
+  onAsignarNuevo: () => void;
 }) {
   if (props.loading) {
     return (
@@ -373,34 +387,51 @@ function TabTratamientos(props: {
     );
   }
 
-  if (props.tratamientos.length === 0) {
+    if (props.tratamientos.length === 0) {
     return (
       <div className="rounded-3xl border border-dashed border-[#003D5B]/15 bg-white/40 px-6 py-12 text-center">
         <Sparkles className="mx-auto mb-2 h-8 w-8 text-[#B8956E]" />
         <p className="text-sm font-semibold text-[#003D5B]">
           Este cliente todavía no tiene tratamientos.
         </p>
-        <p className="mt-1 text-xs text-[#7A746E]">
-          Asignale uno desde la vista principal de Tratamientos.
-        </p>
+        <button
+          type="button"
+          onClick={props.onAsignarNuevo}
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#003D5B] px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-white"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Asignar primer tratamiento
+        </button>
       </div>
     );
   }
 
-  return (
-    <ul className="space-y-3">
-      {props.tratamientos.map((t) => (
-        <TratamientoCard
-          key={t.id}
-          tratamiento={t}
-          onRegistrarSesion={() => props.onRegistrarSesion(t)}
-          onSubirFoto={() => props.onSubirFoto(t)}
-          onCambiarEstado={(e) => props.onCambiarEstado(t, e)}
-          onEliminar={() => props.onEliminar(t)}
-          onEditarSesion={props.onEditarSesion}
-        />
-      ))}
-    </ul>
+        return (
+    <div className="space-y-3">
+      {/* Botón asignar nuevo tratamiento */}
+      <button
+        type="button"
+        onClick={props.onAsignarNuevo}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#003D5B]/25 bg-white/40 py-3 text-sm font-semibold text-[#003D5B] transition hover:border-[#003D5B]/45 hover:bg-white/70"
+      >
+        <Plus className="h-4 w-4" />
+        Asignar otro tratamiento
+      </button>
+
+      <ul className="space-y-3">
+        {props.tratamientos.map((t) => (
+          <TratamientoCard
+            key={t.id}
+            tratamiento={t}
+            onRegistrarSesion={() => props.onRegistrarSesion(t)}
+            onSubirFoto={() => props.onSubirFoto(t)}
+            onCambiarEstado={(e) => props.onCambiarEstado(t, e)}
+            onEliminar={() => props.onEliminar(t)}
+            onEditarSesion={props.onEditarSesion}
+          />
+        ))}
+      </ul>
+    </div>
   );
 }
 
