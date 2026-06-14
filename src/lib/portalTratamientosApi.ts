@@ -40,6 +40,7 @@ export type PortalFotoRow = {
   tipo: 'inicial' | 'progreso' | 'final';
   numero_sesion: number | null;
   descripcion: string | null;
+  subida_por: string | null;
   created_at: string;
 };
 
@@ -109,4 +110,64 @@ export async function refreshSignedUrl(storagePath: string): Promise<string | nu
     .from('tratamiento-fotos')
     .createSignedUrl(storagePath, 60 * 60 * 24); // 24h
   return data?.signedUrl ?? null;
+}
+// ═══════════════════════════════════════════════════════════════
+// CLIENTE SUBE SU PROPIA FOTO
+// ═══════════════════════════════════════════════════════════════
+
+export async function subirFotoCliente(params: {
+  tratamientoId: string;
+  clienteId: string;
+  file: File;
+  descripcion?: string | null;
+}): Promise<{ foto: PortalFotoRow | null; error: string | null }> {
+  try {
+    // 1. Path único dentro del bucket
+    const ext = params.file.name.split('.').pop() ?? 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const storagePath = `${params.tratamientoId}/cliente/${fileName}`;
+
+    // 2. Subir al Storage
+    const { error: uploadError } = await supabase.storage
+      .from('tratamiento-fotos')
+      .upload(storagePath, params.file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) return { foto: null, error: `Upload: ${uploadError.message}` };
+
+    // 3. URL firmada (bucket privado)
+    const { data: urlData } = await supabase.storage
+      .from('tratamiento-fotos')
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365); // 1 año
+
+    const urlFoto = urlData?.signedUrl ?? '';
+
+    // 4. Insertar registro en tabla
+    const { data, error } = await supabase
+      .from('tratamiento_fotos')
+      .insert({
+        tratamiento_id: params.tratamientoId,
+        sesion_id: null,
+        url_foto: urlFoto,
+        storage_path: storagePath,
+        tipo: 'progreso',
+        numero_sesion: null,
+        descripcion: params.descripcion ?? null,
+        subida_por: params.clienteId,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      // Rollback del archivo si falla el insert
+      await supabase.storage.from('tratamiento-fotos').remove([storagePath]);
+      return { foto: null, error: error.message };
+    }
+
+    return { foto: data as PortalFotoRow, error: null };
+  } catch (e) {
+    return { foto: null, error: e instanceof Error ? e.message : 'Error desconocido.' };
+  }
 }

@@ -47,6 +47,8 @@ export type PortalClienteCtxValue = PortalClienteInfo & {
   activeTreatment: PortalActiveTreatment | null;
   sessions: PortalSesionLite[];
   beforeAfterPairs: PortalAntesDespues[];
+  fotosCliente: PortalFotoRow[];
+  tratamientoActivoId: string | null;
   loadingTratamiento: boolean;
   refreshTratamiento: () => Promise<void>;
 };
@@ -87,9 +89,12 @@ function mapSesionToLite(
 
 /** Construye los pares antes/después a partir de las fotos */
 function buildBeforeAfterPairs(
-  fotos: PortalFotoRow[],
-  servicioNombre: string
+  fotosTodas: PortalFotoRow[],
+  servicioNombre: string,
+  clienteId: string
 ): PortalAntesDespues[] {
+  // Solo fotos del admin (no las que subió el cliente) entran en la comparación profesional
+  const fotos = fotosTodas.filter((f) => f.subida_por !== clienteId);
   if (fotos.length < 2) return [];
 
   const iniciales = fotos.filter((f) => f.tipo === 'inicial');
@@ -275,9 +280,15 @@ export function PortalClienteProvider({
       : [];
 
     // Pares antes/después
+        // Pares antes/después — solo fotos del admin
     const beforeAfterPairs: PortalAntesDespues[] = tratamientoReal
-      ? buildBeforeAfterPairs(fotosReales, tratamientoReal.servicio_nombre)
+      ? buildBeforeAfterPairs(fotosReales, tratamientoReal.servicio_nombre, sessionUser.id)
       : [];
+
+    // Fotos que subió el propio cliente (su galería personal)
+    const fotosCliente: PortalFotoRow[] = fotosReales.filter(
+      (f) => f.subida_por === sessionUser.id
+    );
 
     // Puntos: del tratamiento real, o 0
     const loyaltyPoints = tratamientoReal?.puntos_acumulados ?? 0;
@@ -291,9 +302,11 @@ export function PortalClienteProvider({
       memberSinceLabel,
       loyaltyPoints,
       tratamientoInteresLabel: tratamientoMd,
-      activeTreatment,
+            activeTreatment,
       sessions,
       beforeAfterPairs,
+      fotosCliente,
+      tratamientoActivoId: tratamientoReal?.id ?? null,
       loadingTratamiento,
       refreshTratamiento: cargarTratamiento,
     };
