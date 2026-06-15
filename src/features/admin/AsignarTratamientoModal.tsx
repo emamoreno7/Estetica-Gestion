@@ -14,6 +14,8 @@ export default function AsignarTratamientoModal(props: {
   onCreated: () => void | Promise<void>;
   /** Si se pasa, el cliente queda preseleccionado y bloqueado */
   clientePreseleccionadoId?: string;
+  /** Si se pasa, el servicio queda preseleccionado */
+  servicioPreseleccionado?: string;
 }) {
   // ── Paso 1: Cliente ──
   const [termino, setTermino] = useState('');
@@ -47,6 +49,14 @@ export default function AsignarTratamientoModal(props: {
     });
     return out;
   }, []);
+  // Si viene servicio preseleccionado, buscarlo en el catálogo y seleccionarlo
+useEffect(() => {
+  if (!props.servicioPreseleccionado || !serviciosPlanos.length) return;
+  const encontrado = serviciosPlanos.find(
+    (s) => s.nombre.toLowerCase() === props.servicioPreseleccionado!.toLowerCase()
+  );
+  if (encontrado) setServicioId(encontrado.id);
+}, [props.servicioPreseleccionado, serviciosPlanos]);
 
   const servicioSeleccionado = useMemo(
     () => serviciosPlanos.find((s) => s.id === servicioId) ?? null,
@@ -175,10 +185,16 @@ export default function AsignarTratamientoModal(props: {
           </div>
 
           {errMsg ? (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              {errMsg}
-            </div>
-          ) : null}
+  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    {errMsg}
+  </div>
+) : null}
+
+{props.servicioPreseleccionado ? (
+  <div className="mt-4 rounded-2xl border border-[#BFC9A2]/50 bg-[#BFC9A2]/12 px-4 py-3 text-xs text-[#003D5B]">
+    💡 <strong>Tip:</strong> la sesión de hoy se va a vincular automáticamente al tratamiento cuando lo crees.
+  </div>
+) : null}
 
           {/* ── Paso 1: Cliente ── */}
           <section className="mt-6">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -8,7 +8,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Clock,        // ← agregar esto
+  Clock,
   Loader2,
   MessageCircle,
   MoreVertical,
@@ -46,6 +46,7 @@ import {
 } from './adminCitasApi';
 import { clienteTieneTratamientoActivo } from './adminTratamientosApi';
 import EditarCitaModal from './EditarCitaModal';
+import AsignarTratamientoModal from './AsignarTratamientoModal';
 import type { CitaClienteRow } from '@/lib/citasApi';
 
 type AdminOutletCtx = { onSignOut: () => void };
@@ -102,7 +103,6 @@ function EstadoEtiqueta({ estado }: { estado: CitaEstado }) {
 
 export default function AdminAgendaView() {
   const { onSignOut } = useOutletContext<AdminOutletCtx>();
-  const navigate = useNavigate();
   const [dia, setDia] = useState(() => new Date());
   const fechaYmd = format(dia, 'yyyy-MM-dd');
   const [rows, setRows] = useState<CitaAdminListRow[]>([]);
@@ -111,18 +111,14 @@ export default function AdminAgendaView() {
   const [accionMsg, setAccionMsg] = useState<string | null>(null);
   const [menuRow, setMenuRow] = useState<CitaAdminListRow | null>(null);
   const [saving, setSaving] = useState(false);
-  const [avisoSinTratamiento, setAvisoSinTratamiento] = useState<{
-    cliente: string;
-    servicio: string;
-  } | null>(null);
+  const [avisoSinTratamiento, setAvisoSinTratamiento] = useState<CitaAdminListRow | null>(null);
+  const [asignarDesdeAviso, setAsignarDesdeAviso] = useState(false);
 
-  // Solicitudes pendientes (turnos cargados por clientes, esperan aprobación)
   const [solicitudes, setSolicitudes] = useState<CitaAdminListRow[]>([]);
   const [solicitudesErr, setSolicitudesErr] = useState<string | null>(null);
   const [solicitudesLoading, setSolicitudesLoading] = useState(false);
   const [showSolicitudes, setShowSolicitudes] = useState(true);
 
-  // Modal "Nuevo turno"
   const [nuevoOpen, setNuevoOpen] = useState(false);
   const [editarCitaRow, setEditarCitaRow] = useState<CitaAdminListRow | null>(null);
 
@@ -167,7 +163,6 @@ export default function AdminAgendaView() {
       setAccionMsg(error);
       return;
     }
-    // Si la solicitud aprobada cae en el día que estamos viendo, refrescar
     if (row.fecha === fechaYmd) await load();
     await loadSolicitudes();
   }
@@ -197,17 +192,13 @@ export default function AdminAgendaView() {
     }
     setMenuRow(null);
 
-    // Si se marcó como "realizado", verificar si el cliente tiene tratamiento activo
     if (estado === 'realizado') {
       const { tiene } = await clienteTieneTratamientoActivo(
         citaActual.cliente_id,
         citaActual.servicio
       );
       if (!tiene) {
-        setAvisoSinTratamiento({
-          cliente: citaActual.full_name,
-          servicio: citaActual.servicio,
-        });
+        setAvisoSinTratamiento(citaActual);
       }
     }
 
@@ -279,7 +270,7 @@ export default function AdminAgendaView() {
         </p>
       ) : null}
 
-      {/* ─── Panel de solicitudes pendientes ─── */}
+      {/* ─── Solicitudes pendientes ─── */}
       {solicitudesErr ? (
         <div className="mb-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           <strong>Solicitudes:</strong> {solicitudesErr}
@@ -323,7 +314,7 @@ export default function AdminAgendaView() {
                 className="space-y-2 px-3 pb-4 sm:px-5"
               >
                 {solicitudes.map((row) => {
-                  const fechaLbl = format(new Date(row.fecha + 'T12:00:00'), "d MMM", { locale: esLocale });
+                  const fechaLbl = format(new Date(row.fecha + 'T12:00:00'), 'd MMM', { locale: esLocale });
                   return (
                     <li
                       key={row.id}
@@ -379,6 +370,7 @@ export default function AdminAgendaView() {
         </motion.div>
       ) : null}
 
+      {/* ─── Navegador de fecha ─── */}
       <div
         className="mb-6 flex items-center justify-between gap-3 rounded-3xl border border-[#F2D7D5]/65 bg-[#FDF8F5]/95 px-4 py-3 shadow-lg backdrop-blur-sm sm:px-5"
         style={{ boxShadow: '0 16px 48px rgba(0,61,91,0.08)' }}
@@ -423,12 +415,13 @@ export default function AdminAgendaView() {
         Ir a hoy
       </button>
 
-            {accionMsg ? (
-        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      {accionMsg ? (
+        <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           {accionMsg}
         </div>
       ) : null}
 
+      {/* ─── Banner aviso sin tratamiento ─── */}
       <AnimatePresence>
         {avisoSinTratamiento ? (
           <motion.div
@@ -449,8 +442,8 @@ export default function AdminAgendaView() {
                   Sesión marcada como realizada, pero sin tratamiento activo
                 </p>
                 <p className="mt-0.5 text-xs text-amber-900/85">
-                  <strong>{avisoSinTratamiento.cliente}</strong> no tiene un tratamiento activo de{' '}
-                  <strong>{avisoSinTratamiento.servicio}</strong>. La sesión no se sumó al progreso.
+                  <strong>{avisoSinTratamiento.full_name}</strong> no tiene un tratamiento activo de{' '}
+                  <strong>{avisoSinTratamiento.servicio}</strong>. ¿Querés crear uno ahora y vincular esta sesión automáticamente?
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
@@ -464,14 +457,11 @@ export default function AdminAgendaView() {
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    setAvisoSinTratamiento(null);
-                    navigate('/admin/tratamientos');
-                  }}
+                  onClick={() => setAsignarDesdeAviso(true)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-white shadow-md transition hover:bg-amber-700"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  Asignar tratamiento
+                  Crear tratamiento
                 </motion.button>
               </div>
             </div>
@@ -479,6 +469,7 @@ export default function AdminAgendaView() {
         ) : null}
       </AnimatePresence>
 
+      {/* ─── Lista de turnos ─── */}
       {loading ? (
         <div className="flex flex-col items-center justify-center gap-3 py-24 text-[#003D5B]/55">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -556,6 +547,7 @@ export default function AdminAgendaView() {
         </ul>
       )}
 
+      {/* ─── Bottom sheet acciones ─── */}
       <AnimatePresence>
         {menuRow ? (
           <>
@@ -611,7 +603,8 @@ export default function AdminAgendaView() {
                   </button>
                 ))}
               </div>
-                            <button
+
+              <button
                 type="button"
                 disabled={saving}
                 onClick={() => {
@@ -647,7 +640,7 @@ export default function AdminAgendaView() {
         ) : null}
       </AnimatePresence>
 
-      {/* ─── Modal: Nuevo turno (creado por admin) ─── */}
+      {/* ─── Modal: Nuevo turno ─── */}
       <AnimatePresence>
         {nuevoOpen ? (
           <NuevoTurnoModal
@@ -656,11 +649,9 @@ export default function AdminAgendaView() {
             onCreated={async (cita) => {
               setNuevoOpen(false);
               setAccionMsg(`Turno creado · ${cita.full_name} · ${horaCorta(cita.hora)}`);
-              // Si la cita cae en el día visible, refrescamos
               if (cita.fecha === fechaYmd) {
                 await load();
               } else {
-                // Saltar al día del turno creado
                 const [y, m, d] = cita.fecha.split('-').map(Number);
                 setDia(new Date(y, m - 1, d));
               }
@@ -669,7 +660,9 @@ export default function AdminAgendaView() {
           />
         ) : null}
       </AnimatePresence>
-            <AnimatePresence>
+
+      {/* ─── Modal: Editar cita ─── */}
+      <AnimatePresence>
         {editarCitaRow ? (
           <EditarCitaModal
             cita={{
@@ -689,14 +682,29 @@ export default function AdminAgendaView() {
           />
         ) : null}
       </AnimatePresence>
+
+      {/* ─── Modal: Asignar tratamiento desde aviso ─── */}
+      <AnimatePresence>
+        {asignarDesdeAviso && avisoSinTratamiento ? (
+          <AsignarTratamientoModal
+            clientePreseleccionadoId={avisoSinTratamiento.cliente_id}
+            servicioPreseleccionado={avisoSinTratamiento.servicio}
+            onClose={() => setAsignarDesdeAviso(false)}
+            onCreated={async () => {
+              setAsignarDesdeAviso(false);
+              setAvisoSinTratamiento(null);
+              setAccionMsg(`Tratamiento asignado a ${avisoSinTratamiento.full_name} ✓`);
+            }}
+          />
+        ) : null}
+      </AnimatePresence>
     </AdminShell>
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════════
-// NuevoTurnoModal — formulario para que el admin cargue un turno.
-// Flujo: 1) elegir cliente (buscador) → 2) servicio + fecha → 3) hora libre
-// ═════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// NuevoTurnoModal
+// ═══════════════════════════════════════════════════════════════
 
 type NuevoTurnoCreated = CitaAdminListRow;
 
@@ -710,7 +718,6 @@ function NuevoTurnoModal(props: {
   const [buscando, setBuscando] = useState(false);
   const [cliente, setCliente] = useState<ClienteOpcion | null>(null);
 
-  // Sub-form "crear cliente nuevo"
   const [mostrarCrearCliente, setMostrarCrearCliente] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoTel, setNuevoTel] = useState('');
@@ -732,7 +739,6 @@ function NuevoTurnoModal(props: {
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
-  // Buscar clientes con debounce
   useEffect(() => {
     let cancel = false;
     setBuscando(true);
@@ -740,19 +746,12 @@ function NuevoTurnoModal(props: {
       const { rows, error } = await buscarClientesActivos(termino, 20);
       if (cancel) return;
       setBuscando(false);
-      if (error) {
-        setOpciones([]);
-        return;
-      }
+      if (error) { setOpciones([]); return; }
       setOpciones(rows);
     }, 220);
-    return () => {
-      cancel = true;
-      clearTimeout(t);
-    };
+    return () => { cancel = true; clearTimeout(t); };
   }, [termino]);
 
-  // Recargar horarios libres al cambiar la fecha
   useEffect(() => {
     let cancel = false;
     (async () => {
@@ -768,9 +767,7 @@ function NuevoTurnoModal(props: {
       }
       setSlotsLibres(filtrarFranjasDisponibles(horasOcupadas, todasFranjas));
     })();
-    return () => {
-      cancel = true;
-    };
+    return () => { cancel = true; };
   }, [fechaYmd, todasFranjas]);
 
   const canSubmit = !!(cliente && servicio && fechaYmd && hora && !saving);
@@ -875,10 +872,7 @@ function NuevoTurnoModal(props: {
                   </p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setMostrarCrearCliente(false);
-                      setCrearClienteErr(null);
-                    }}
+                    onClick={() => { setMostrarCrearCliente(false); setCrearClienteErr(null); }}
                     className="text-[10px] font-semibold uppercase tracking-wider text-[#003D5B]/60"
                   >
                     ← Volver a buscar
@@ -1084,71 +1078,62 @@ function NuevoTurnoModal(props: {
           </section>
 
           {/* ── Hora ── */}
-          {/* ── Hora ── */}
-<section className="mt-6">
-  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#003D5B]/45">
-    3 · Horario
-    {slotsLoading ? <Loader2 className="ml-2 inline h-3.5 w-3.5 animate-spin" /> : null}
-  </p>
-
-  {/* Input libre — el admin siempre puede escribir cualquier hora */}
-  <div className="mb-4 flex items-center gap-2 rounded-xl border border-[#F2D7D5]/75 bg-white/95 px-3 py-2.5">
-    <Clock className="h-4 w-4 shrink-0 text-[#003D5B]/45" />
-    <input
-      type="time"
-      value={hora.slice(0, 5)}
-      onChange={(e) => setHora(e.target.value ? `${e.target.value}:00` : '')}
-      className="w-full bg-transparent text-sm text-[#003D5B] outline-none"
-      placeholder="--:--"
-    />
-    {hora ? (
-      <span className="text-[10px] font-semibold text-[#003D5B]/45">
-        seleccionado
-      </span>
-    ) : null}
-  </div>
-
-  {/* Slots sugeridos como acceso rápido */}
-  {slotsErr ? (
-    <p className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
-      {slotsErr}
-    </p>
-  ) : null}
-
-  {!slotsLoading && (
-    <>
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#003D5B]/35">
-        Huecos disponibles
-      </p>
-      {slotsLibres.length === 0 ? (
-        <p className="text-sm text-[#7A746E]">
-          No quedan horas libres este día. Igual podés ingresar una hora arriba.
-        </p>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {slotsLibres.map((hh) => {
-            const hhCorta = horaCorta(hh);
-            const seleccionado = hora.slice(0, 5) === hhCorta;
-            return (
-              <button
-                key={hh}
-                type="button"
-                onClick={() => setHora(hh)}
-                className={`min-h-[40px] rounded-xl border px-3.5 py-2 text-sm font-semibold transition ${
-                  seleccionado
-                    ? 'border-[#003D5B] bg-[#003D5B] text-white'
-                    : 'border-[#003D5B]/15 bg-white text-[#003D5B] hover:bg-[#F2D7D5]/25'
-                }`}
-              >
-                {hhCorta} hs
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </>
-  )}
-</section>
+          <section className="mt-6">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#003D5B]/45">
+              3 · Horario
+              {slotsLoading ? <Loader2 className="ml-2 inline h-3.5 w-3.5 animate-spin" /> : null}
+            </p>
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-[#F2D7D5]/75 bg-white/95 px-3 py-2.5">
+              <Clock className="h-4 w-4 shrink-0 text-[#003D5B]/45" />
+              <input
+                type="time"
+                value={hora.slice(0, 5)}
+                onChange={(e) => setHora(e.target.value ? `${e.target.value}:00` : '')}
+                className="w-full bg-transparent text-sm text-[#003D5B] outline-none"
+              />
+              {hora ? (
+                <span className="text-[10px] font-semibold text-[#003D5B]/45">seleccionado</span>
+              ) : null}
+            </div>
+            {slotsErr ? (
+              <p className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+                {slotsErr}
+              </p>
+            ) : null}
+            {!slotsLoading && (
+              <>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#003D5B]/35">
+                  Huecos disponibles
+                </p>
+                {slotsLibres.length === 0 ? (
+                  <p className="text-sm text-[#7A746E]">
+                    No quedan horas libres este día. Igual podés ingresar una hora arriba.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {slotsLibres.map((hh) => {
+                      const hhCorta = horaCorta(hh);
+                      const seleccionado = hora.slice(0, 5) === hhCorta;
+                      return (
+                        <button
+                          key={hh}
+                          type="button"
+                          onClick={() => setHora(hh)}
+                          className={`min-h-[40px] rounded-xl border px-3.5 py-2 text-sm font-semibold transition ${
+                            seleccionado
+                              ? 'border-[#003D5B] bg-[#003D5B] text-white'
+                              : 'border-[#003D5B]/15 bg-white text-[#003D5B] hover:bg-[#F2D7D5]/25'
+                          }`}
+                        >
+                          {hhCorta} hs
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
 
           {/* ── Nota ── */}
           <section className="mt-6">
