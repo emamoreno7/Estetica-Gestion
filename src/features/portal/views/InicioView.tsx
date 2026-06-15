@@ -19,6 +19,7 @@ import { useCitasData } from '@/context/CitasDataContext';
 import { esCitaFutura, parseCitaMomentLocal, type CitaClienteRow } from '@/lib/citasApi';
 import { buildWhatsAppHref } from '@/lib/whatsapp';
 import type { PortalView } from '../types';
+import { TratamientoSelector } from '../components/TratamientoSelector';
 
 function resumenCitaPortalCompacta(c: CitaClienteRow): string {
   const d = parseCitaMomentLocal(c);
@@ -167,11 +168,12 @@ export function InicioView({ onNav }: Props) {
   const progress = tratamientoProgresoPct(activeTreatment);
 
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl p-6 text-white shadow-2xl lg:p-8"
+  <div className="space-y-6">
+    <TratamientoSelector />
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative overflow-hidden rounded-3xl p-6 text-white shadow-2xl lg:p-8"
         style={{
           background: 'linear-gradient(135deg, #003D5B 0%, #005580 55%, #004D72 100%)',
           boxShadow: '0 24px 64px rgba(0,61,91,0.28)',

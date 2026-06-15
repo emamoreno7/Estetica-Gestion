@@ -16,6 +16,7 @@ import {
 import { asset } from '@/lib/asset';
 import { tratamientoProgresoPct, usePortalCliente } from '@/context/PortalClienteContext';
 import { PortalTreatmentEmptyPlaceholder } from '../components/PortalTreatmentEmptyPlaceholder';
+import { TratamientoSelector } from '../components/TratamientoSelector';
 
 export function TratamientoView() {
   const { activeTreatment, sessions } = usePortalCliente();
@@ -35,13 +36,14 @@ export function TratamientoView() {
   const progress = tratamientoProgresoPct(activeTreatment);
 
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl"
-      >
-        <img
+  <div className="space-y-6">
+    <TratamientoSelector />
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative overflow-hidden rounded-3xl"
+    >
+      <img
           src={asset(activeTreatment.imagen)}
           alt={activeTreatment.nombre}
           className="h-56 w-full object-cover lg:h-72"

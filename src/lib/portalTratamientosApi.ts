@@ -49,8 +49,9 @@ export type PortalFotoRow = {
 // ═══════════════════════════════════════════════════════════════
 
 /** Obtiene el tratamiento activo (más reciente) del cliente */
-export async function fetchTratamientoActivoCliente(clienteId: string): Promise<{
-  tratamiento: PortalTratamientoRow | null;
+/** Obtiene TODOS los tratamientos activos/pausados del cliente */
+export async function fetchTratamientosActivosCliente(clienteId: string): Promise<{
+  tratamientos: PortalTratamientoRow[];
   error: string | null;
 }> {
   const { data, error } = await supabase
@@ -58,20 +59,16 @@ export async function fetchTratamientoActivoCliente(clienteId: string): Promise<
     .select('*')
     .eq('cliente_id', clienteId)
     .in('estado', ['activo', 'pausado'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order('created_at', { ascending: false });
 
-  if (error) return { tratamiento: null, error: error.message };
-  if (!data) return { tratamiento: null, error: null };
+  if (error) return { tratamientos: [], error: error.message };
 
-  return {
-    tratamiento: {
-      ...data,
-      precio_total: Number(data.precio_total) || 0,
-    } as PortalTratamientoRow,
-    error: null,
-  };
+  const tratamientos = (data ?? []).map((d) => ({
+    ...d,
+    precio_total: Number(d.precio_total) || 0,
+  })) as PortalTratamientoRow[];
+
+  return { tratamientos, error: null };
 }
 
 /** Obtiene todas las sesiones de un tratamiento */

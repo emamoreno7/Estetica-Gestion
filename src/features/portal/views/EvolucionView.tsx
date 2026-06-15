@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { usePortalCliente } from '@/context/PortalClienteContext';
 import { PortalTreatmentEmptyPlaceholder } from '../components/PortalTreatmentEmptyPlaceholder';
 import SubirFotoClienteModal from './SubirFotoClienteModal';
+import { TratamientoSelector } from '../components/TratamientoSelector';
 
 export function EvolucionView() {
   const { session } = useAuth();
@@ -38,9 +39,10 @@ export function EvolucionView() {
   const pair = hayPares ? beforeAfterPairs[currentPair] : null;
 
   return (
-    <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
+  <div className="space-y-6">
+    <TratamientoSelector />
+    {/* Stats */}
+    <div className="grid gap-4 sm:grid-cols-3">
         {[
           { icon: Camera, value: String(fotosCliente.length + sessions.filter((s) => s.foto).length), label: 'Fotos de Progreso' },
           { icon: TrendingUp, value: `${Math.round((activeTreatment.sesionesCompletadas / Math.max(activeTreatment.totalSesiones, 1)) * 100)}%`, label: 'Progreso del Plan' },
