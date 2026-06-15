@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
+  BarChart3,       // ← agregar
   Calculator,
   CalendarDays,
   HeartPulse,
@@ -40,6 +41,7 @@ const ITEMS: Item[] = [
   { to: '/admin/servicios', label: 'Servicios', icon: Sparkles },
   { to: '/admin/costos', label: 'Costos y precios', icon: Calculator },
   { to: '/admin/auditoria-precios', label: 'Auditoría precios', icon: ShieldAlert, badgeKey: 'audit' },
+  { to: '/admin/reportes', label: 'Reportes', icon: BarChart3 },  // ← nuevo
 ];
 
 type Props = {
