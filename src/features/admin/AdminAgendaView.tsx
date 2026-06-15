@@ -8,9 +8,11 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Clock,        // ← agregar esto
   Loader2,
   MessageCircle,
   MoreVertical,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -43,6 +45,8 @@ import {
   type ClienteOpcion,
 } from './adminCitasApi';
 import { clienteTieneTratamientoActivo } from './adminTratamientosApi';
+import EditarCitaModal from './EditarCitaModal';
+import type { CitaClienteRow } from '@/lib/citasApi';
 
 type AdminOutletCtx = { onSignOut: () => void };
 
@@ -120,6 +124,7 @@ export default function AdminAgendaView() {
 
   // Modal "Nuevo turno"
   const [nuevoOpen, setNuevoOpen] = useState(false);
+  const [editarCitaRow, setEditarCitaRow] = useState<CitaAdminListRow | null>(null);
 
   const admins = getPortalAdminEmails();
   const adminIds = getPortalAdminUserIds();
@@ -606,6 +611,19 @@ export default function AdminAgendaView() {
                   </button>
                 ))}
               </div>
+                            <button
+                type="button"
+                disabled={saving}
+                onClick={() => {
+                  const row = menuRow;
+                  setMenuRow(null);
+                  setEditarCitaRow(row);
+                }}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#003D5B]/15 bg-white py-4 text-sm font-semibold text-[#003D5B] transition hover:bg-[#F2D7D5]/30"
+              >
+                <Pencil className="h-4 w-4" />
+                Editar fecha y hora
+              </button>
 
               <button
                 type="button"
@@ -646,6 +664,26 @@ export default function AdminAgendaView() {
                 const [y, m, d] = cita.fecha.split('-').map(Number);
                 setDia(new Date(y, m - 1, d));
               }
+              await loadSolicitudes();
+            }}
+          />
+        ) : null}
+      </AnimatePresence>
+            <AnimatePresence>
+        {editarCitaRow ? (
+          <EditarCitaModal
+            cita={{
+              id: editarCitaRow.id,
+              cliente_id: editarCitaRow.cliente_id,
+              servicio: editarCitaRow.servicio,
+              fecha: editarCitaRow.fecha,
+              hora: editarCitaRow.hora,
+              estado: editarCitaRow.estado,
+            } satisfies CitaClienteRow}
+            onClose={() => setEditarCitaRow(null)}
+            onSaved={async () => {
+              setEditarCitaRow(null);
+              await load();
               await loadSolicitudes();
             }}
           />
@@ -1046,37 +1084,71 @@ function NuevoTurnoModal(props: {
           </section>
 
           {/* ── Hora ── */}
-          <section className="mt-6">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#003D5B]/45">
-              3 · Horario disponible
-              {slotsLoading ? <Loader2 className="ml-2 inline h-3.5 w-3.5 animate-spin" /> : null}
-            </p>
-            {slotsErr ? (
-              <p className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
-                {slotsErr}
-              </p>
-            ) : null}
-            {slotsLibres.length === 0 && !slotsLoading ? (
-              <p className="text-sm text-[#7A746E]">No quedan horas libres este día. Elegí otra fecha.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {slotsLibres.map((hh) => (
-                  <button
-                    key={hh}
-                    type="button"
-                    onClick={() => setHora(hh)}
-                    className={`min-h-[40px] rounded-xl border px-3.5 py-2 text-sm font-semibold transition ${
-                      hora === hh
-                        ? 'border-[#003D5B] bg-[#003D5B] text-white'
-                        : 'border-[#003D5B]/15 bg-white text-[#003D5B] hover:bg-[#F2D7D5]/25'
-                    }`}
-                  >
-                    {horaCorta(hh)} hs
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
+          {/* ── Hora ── */}
+<section className="mt-6">
+  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#003D5B]/45">
+    3 · Horario
+    {slotsLoading ? <Loader2 className="ml-2 inline h-3.5 w-3.5 animate-spin" /> : null}
+  </p>
+
+  {/* Input libre — el admin siempre puede escribir cualquier hora */}
+  <div className="mb-4 flex items-center gap-2 rounded-xl border border-[#F2D7D5]/75 bg-white/95 px-3 py-2.5">
+    <Clock className="h-4 w-4 shrink-0 text-[#003D5B]/45" />
+    <input
+      type="time"
+      value={hora.slice(0, 5)}
+      onChange={(e) => setHora(e.target.value ? `${e.target.value}:00` : '')}
+      className="w-full bg-transparent text-sm text-[#003D5B] outline-none"
+      placeholder="--:--"
+    />
+    {hora ? (
+      <span className="text-[10px] font-semibold text-[#003D5B]/45">
+        seleccionado
+      </span>
+    ) : null}
+  </div>
+
+  {/* Slots sugeridos como acceso rápido */}
+  {slotsErr ? (
+    <p className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+      {slotsErr}
+    </p>
+  ) : null}
+
+  {!slotsLoading && (
+    <>
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#003D5B]/35">
+        Huecos disponibles
+      </p>
+      {slotsLibres.length === 0 ? (
+        <p className="text-sm text-[#7A746E]">
+          No quedan horas libres este día. Igual podés ingresar una hora arriba.
+        </p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {slotsLibres.map((hh) => {
+            const hhCorta = horaCorta(hh);
+            const seleccionado = hora.slice(0, 5) === hhCorta;
+            return (
+              <button
+                key={hh}
+                type="button"
+                onClick={() => setHora(hh)}
+                className={`min-h-[40px] rounded-xl border px-3.5 py-2 text-sm font-semibold transition ${
+                  seleccionado
+                    ? 'border-[#003D5B] bg-[#003D5B] text-white'
+                    : 'border-[#003D5B]/15 bg-white text-[#003D5B] hover:bg-[#F2D7D5]/25'
+                }`}
+              >
+                {hhCorta} hs
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
+  )}
+</section>
 
           {/* ── Nota ── */}
           <section className="mt-6">
