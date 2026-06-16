@@ -20,7 +20,7 @@ import { notifTargetView } from '@/lib/notificacionesApi';
 import { clearLocalAppData } from '@/lib/clearLocalAppData';
 import { updatePerfilClienteFields } from '@/lib/perfilCliente';
 
-export type PortalHeaderView = 'inicio' | 'tratamiento' | 'evolucion' | 'citas' | 'perfil';
+export type PortalHeaderView = 'inicio' | 'tratamiento' | 'evolucion' | 'citas' | 'perfil' | 'analizador';
 
 /** Subconjunto del contexto portal (evita dependencia circular con App). */
 export type PortalHeaderCliente = {

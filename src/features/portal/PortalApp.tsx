@@ -1,3 +1,4 @@
+// src/features/portal/PortalApp.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -16,6 +17,7 @@ import { TratamientoView } from './views/TratamientoView';
 import { EvolucionView } from './views/EvolucionView';
 import { CitasView } from './views/CitasView';
 import { PerfilView } from './views/PerfilView';
+import { AnalizadorView } from './views/AnalizadorView';
 import type { PortalView } from './types';
 
 export function PortalApp() {
@@ -40,6 +42,8 @@ export function PortalApp() {
         return <EvolucionView />;
       case 'citas':
         return <CitasView />;
+      case 'analizador':
+        return <AnalizadorView />;
       case 'perfil':
         return <PerfilView />;
     }

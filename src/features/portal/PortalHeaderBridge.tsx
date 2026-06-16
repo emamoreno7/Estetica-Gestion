@@ -1,4 +1,5 @@
-import { PortalHeader } from '@/components/portal/PortalHeader';
+// src/features/portal/PortalHeaderBridge.tsx
+import { PortalHeader, type PortalHeaderView } from '@/components/portal/PortalHeader';
 import { usePortalCliente } from '@/context/PortalClienteContext';
 import type { PortalView } from './types';
 
@@ -9,8 +10,8 @@ export function PortalHeaderBridge({ view, onNav }: Props) {
   const pc = usePortalCliente();
   return (
     <PortalHeader
-      view={view}
-      onNavigate={onNav}
+      view={view as PortalHeaderView}
+      onNavigate={(v) => onNav(v as PortalView)}
       portalCliente={{
         displayName: pc.displayName,
         greetingName: pc.greetingName,
