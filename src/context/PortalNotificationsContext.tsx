@@ -28,7 +28,9 @@ export type PortalNotificationKind =
   | 'cita_confirmada'
   | 'admin_mensaje'
   | 'sesion_registrada'
-  | 'foto_subida';
+  | 'foto_subida'
+  | 'cita_actualizada'
+  | 'proxima_sesion_agendada';
 
 export type PortalNotificationItem = {
   id: string;

@@ -8,7 +8,9 @@ export type NotifKind =
   | 'cita_confirmada'
   | 'admin_mensaje'
   | 'sesion_registrada'
-  | 'foto_subida';
+  | 'foto_subida'
+  | 'cita_actualizada'
+  | 'proxima_sesion_agendada';
 
 export type NotificacionRow = {
   id: string;
@@ -102,7 +104,10 @@ export function notifTargetView(kind: NotifKind): PortalViewTarget {
     case 'foto_subida':
       return 'evolucion';
     case 'cita_confirmada':
+    case 'cita_actualizada':
       return 'citas';
+    case 'proxima_sesion_agendada':
+      return 'tratamiento';
     case 'admin_mensaje':
     default:
       return 'inicio';

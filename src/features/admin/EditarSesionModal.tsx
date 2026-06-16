@@ -1,16 +1,43 @@
+// src/features/admin/EditarSesionModal.tsx
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Clock, Loader2, Pencil, X } from 'lucide-react';
 import { actualizarSesion, type SesionRow } from './adminTratamientosApi';
+import { insertNotificacion } from '@/lib/notificacionesApi';
+import { format, parseISO } from 'date-fns';
+import { es as esLocale } from 'date-fns/locale';
 
 const PROFESIONALES = ['Ailen Carro', 'Ayelen', 'Equipo Amore'] as const;
 
-export default function EditarSesionModal(props: {
+// ─── Helper: formatear fecha legible para la notificación ───────────────────
+
+function formatFechaNotif(fechaISO: string, hora: string): string {
+  try {
+    const fecha = parseISO(fechaISO);
+    const diaFormato = format(fecha, "EEEE d 'de' MMMM", { locale: esLocale });
+    // Capitalizar primer letra
+    const diaCapitalizado = diaFormato.charAt(0).toUpperCase() + diaFormato.slice(1);
+    const horaFormato = hora.slice(0, 5);
+    return `${diaCapitalizado} a las ${horaFormato} hs`;
+  } catch {
+    return `${fechaISO} a las ${hora.slice(0, 5)} hs`;
+  }
+}
+
+// ─── Props ───────────────────────────────────────────────────────────────────
+
+interface Props {
   sesion: SesionRow;
+  clienteId: string;        // ← nuevo: para enviar la notificación
+  servicioNombre: string;   // ← nuevo: para el texto de la notificación
   onClose: () => void;
   onSaved: () => void | Promise<void>;
-}) {
-  const { sesion } = props;
+}
+
+// ─── Componente ──────────────────────────────────────────────────────────────
+
+export default function EditarSesionModal(props: Props) {
+  const { sesion, clienteId, servicioNombre } = props;
 
   const horaInicial = (sesion.hora_sesion ?? '').slice(0, 5);
 
@@ -18,6 +45,7 @@ export default function EditarSesionModal(props: {
   const [hora, setHora] = useState(horaInicial);
   const [profesional, setProfesional] = useState(sesion.profesional);
   const [observaciones, setObservaciones] = useState(sesion.observaciones ?? '');
+  const [notificarCliente, setNotificarCliente] = useState(true);
 
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -28,11 +56,13 @@ export default function EditarSesionModal(props: {
     profesional !== sesion.profesional ||
     observaciones !== (sesion.observaciones ?? '');
 
+  // ── Guardar sesión + notificar ──────────────────────────────────────────
   async function guardar() {
     if (!cambiosHechos || saving) return;
     setSaving(true);
     setErrMsg(null);
 
+    // 1. Actualizar sesión en DB
     const { error } = await actualizarSesion(sesion.id, {
       fechaSesion: fecha,
       horaSesion: hora ? `${hora}:00` : null,
@@ -40,11 +70,25 @@ export default function EditarSesionModal(props: {
       observaciones: observaciones.trim() || null,
     });
 
-    setSaving(false);
     if (error) {
       setErrMsg(error);
+      setSaving(false);
       return;
     }
+
+    // 2. Enviar notificación al cliente (si el toggle está activo)
+    if (notificarCliente && clienteId) {
+      const fechaTexto = formatFechaNotif(fecha, hora);
+      await insertNotificacion({
+        clienteId,
+        kind: 'proxima_sesion_agendada',
+        title: '📅 Próxima sesión agendada',
+        body: `Tu sesión #${sesion.numero_sesion} de ${servicioNombre} quedó agendada para el ${fechaTexto} con ${profesional}.`,
+        tratamientoId: sesion.tratamiento_id,
+        sesionId: sesion.id,
+      });
+    }
+
     await props.onSaved();
   }
 
@@ -93,7 +137,7 @@ export default function EditarSesionModal(props: {
                 Editar sesión #{sesion.numero_sesion}
               </h2>
               <p className="text-[11px] uppercase tracking-[0.18em] text-[#003D5B]/45">
-                +{sesion.puntos_otorgados} pts otorgados
+                {servicioNombre} · +{sesion.puntos_otorgados} pts
               </p>
             </div>
           </div>
@@ -171,6 +215,71 @@ export default function EditarSesionModal(props: {
               />
             </label>
           </section>
+
+          {/* Toggle notificación */}
+          <section className="mt-5">
+            <button
+              type="button"
+              onClick={() => setNotificarCliente((v) => !v)}
+              className="flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition"
+              style={{
+                borderColor: notificarCliente
+                  ? 'rgba(191,201,162,0.6)'
+                  : 'rgba(0,61,91,0.12)',
+                background: notificarCliente
+                  ? 'rgba(191,201,162,0.12)'
+                  : 'rgba(255,255,255,0.5)',
+              }}
+            >
+              <div>
+                <p className="text-sm font-semibold text-[#003D5B]">
+                  📱 Notificar al cliente
+                </p>
+                <p className="text-[11px] text-[#7A746E]">
+                  {notificarCliente
+                    ? 'Se enviará una notificación con fecha y hora'
+                    : 'No se enviará notificación'}
+                </p>
+              </div>
+              {/* Toggle visual */}
+              <div
+                className="relative h-6 w-11 rounded-full transition-colors duration-200"
+                style={{
+                  background: notificarCliente ? '#003D5B' : 'rgba(0,61,91,0.2)',
+                }}
+              >
+                <motion.div
+                  animate={{ x: notificarCliente ? 20 : 2 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  className="absolute top-1 h-4 w-4 rounded-full bg-white shadow"
+                />
+              </div>
+            </button>
+          </section>
+
+          {/* Preview de la notificación */}
+          {notificarCliente && fecha && hora && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 rounded-2xl px-4 py-3"
+              style={{
+                background: 'rgba(0,61,91,0.04)',
+                border: '1px solid rgba(0,61,91,0.08)',
+              }}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#003D5B]/50 mb-1">
+                Vista previa de notificación
+              </p>
+              <p className="text-xs font-semibold text-[#003D5B]">
+                📅 Próxima sesión agendada
+              </p>
+              <p className="mt-0.5 text-xs text-[#7A746E]">
+                Tu sesión #{sesion.numero_sesion} de {servicioNombre} quedó agendada para el{' '}
+                {formatFechaNotif(fecha, hora)} con {profesional}.
+              </p>
+            </motion.div>
+          )}
 
           <motion.button
             type="button"

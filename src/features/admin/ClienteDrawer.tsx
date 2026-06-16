@@ -71,7 +71,10 @@ export default function ClienteDrawer(props: {
   const [sesionTrat, setSesionTrat] = useState<TratamientoClienteRow | null>(null);
   const [fotoTrat, setFotoTrat] = useState<TratamientoClienteRow | null>(null);
   const [editarCita, setEditarCita] = useState<CitaClienteRow | null>(null);
-  const [editarSesion, setEditarSesion] = useState<SesionRow | null>(null);
+  const [editarSesion, setEditarSesion] = useState<{
+  sesion: SesionRow;
+  servicioNombre: string;
+} | null>(null);
   const [asignarOpen, setAsignarOpen] = useState(false);
 
   // ─── Cargar tratamientos del cliente ──────────────────────
@@ -253,7 +256,7 @@ export default function ClienteDrawer(props: {
                   onSubirFoto={(t) => setFotoTrat(t)}
                   onCambiarEstado={(t, e) => void cambiarEstadoTrat(t, e)}
                   onEliminar={(t) => void borrarTrat(t)}
-                  onEditarSesion={(s) => setEditarSesion(s)}
+                  onEditarSesion={(s, servicioNombre) => setEditarSesion({ sesion: s, servicioNombre })}
                   onAsignarNuevo={() => setAsignarOpen(true)}
                 />
               ) : null}
@@ -315,15 +318,17 @@ export default function ClienteDrawer(props: {
           />
         ) : null}
         {editarSesion ? (
-          <EditarSesionModal
-            sesion={editarSesion}
-            onClose={() => setEditarSesion(null)}
-            onSaved={async () => {
-              setEditarSesion(null);
-              await loadTratamientos();
-            }}
-          />
-        ) : null}
+  <EditarSesionModal
+    sesion={editarSesion.sesion}
+    clienteId={cliente.id}
+    servicioNombre={editarSesion.servicioNombre}
+    onClose={() => setEditarSesion(null)}
+    onSaved={async () => {
+      setEditarSesion(null);
+      await loadTratamientos();
+    }}
+  />
+) : null}
       </AnimatePresence>
     </>
   );
@@ -375,7 +380,7 @@ function TabTratamientos(props: {
   onSubirFoto: (t: TratamientoClienteRow) => void;
   onCambiarEstado: (t: TratamientoClienteRow, e: TratamientoEstado) => void;
   onEliminar: (t: TratamientoClienteRow) => void;
-  onEditarSesion: (s: SesionRow) => void;
+  onEditarSesion: (s: SesionRow, servicioNombre: string) => void;
   onAsignarNuevo: () => void;
 }) {
   if (props.loading) {
@@ -441,7 +446,7 @@ function TratamientoCard(props: {
   onSubirFoto: () => void;
   onCambiarEstado: (e: TratamientoEstado) => void;
   onEliminar: () => void;
-  onEditarSesion: (s: SesionRow) => void;
+  onEditarSesion: (s: SesionRow, servicioNombre: string) => void;
 }) {
   const { tratamiento: t } = props;
   const [expanded, setExpanded] = useState(false);
@@ -642,7 +647,7 @@ function TratamientoCard(props: {
                           </div>
                           <button
                             type="button"
-                            onClick={() => props.onEditarSesion(s)}
+                            onClick={() => props.onEditarSesion(s, t.servicio_nombre)}
                             className="shrink-0 rounded-full border border-[#003D5B]/15 bg-white p-1.5 text-[#003D5B]"
                             aria-label="Editar sesión"
                           >
