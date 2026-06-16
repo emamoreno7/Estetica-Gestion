@@ -19,9 +19,11 @@ import { CitasView } from './views/CitasView';
 import { PerfilView } from './views/PerfilView';
 import { AnalizadorView } from './views/AnalizadorView';
 import type { PortalView } from './types';
+import type { ServicioReservable } from '@/lib/citasConstants';
 
 export function PortalApp() {
   const [view, setView] = useState<PortalView>('inicio');
+  const [servicioParaReservar, setServicioParaReservar] = useState<ServicioReservable | null>(null);
   const navigate = useNavigate();
   const { signOut, session } = useAuth();
 
@@ -32,6 +34,12 @@ export function PortalApp() {
 
   if (!user) return null;
 
+  // ── Handler: el Analizador IA pide reservar un servicio ────────────────
+  function handleReservarDesdeAnalizador(servicio: ServicioReservable) {
+    setServicioParaReservar(servicio);
+    setView('citas');
+  }
+
   const renderView = () => {
     switch (view) {
       case 'inicio':
@@ -41,9 +49,14 @@ export function PortalApp() {
       case 'evolucion':
         return <EvolucionView />;
       case 'citas':
-        return <CitasView />;
+        return (
+          <CitasView
+            servicioPreseleccionado={servicioParaReservar}
+            onServicioConsumido={() => setServicioParaReservar(null)}
+          />
+        );
       case 'analizador':
-        return <AnalizadorView />;
+        return <AnalizadorView onReservarServicio={handleReservarDesdeAnalizador} />;
       case 'perfil':
         return <PerfilView />;
     }

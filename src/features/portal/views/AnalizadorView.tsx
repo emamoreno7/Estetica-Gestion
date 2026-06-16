@@ -17,15 +17,22 @@ import {
   type ResultadoAnalisisIA,
   type AnalisisRealizado,
 } from '@/lib/analizadorApi';
+import type { ServicioReservable } from '@/lib/citasConstants';
 import { useAuth } from '@/context/AuthContext';
 
 // ─── Tipos de paso del flujo ────────────────────────────────────────────────
 
 type Paso = 'intro' | 'zona' | 'foto' | 'analizando' | 'resultado' | 'limite';
 
+// ─── Props ───────────────────────────────────────────────────────────────────
+
+interface Props {
+  onReservarServicio?: (servicio: ServicioReservable) => void;
+}
+
 // ─── Componente principal ────────────────────────────────────────────────────
 
-export function AnalizadorView() {
+export function AnalizadorView({ onReservarServicio }: Props) {
   const { greetingName } = usePortalCliente();
   const { session } = useAuth();
 
@@ -64,7 +71,6 @@ export function AnalizadorView() {
   async function handleFotoCapturada(foto: File) {
     if (!zonaSeleccionada) return;
 
-    // Verificar límite antes de analizar
     if (!puedeAnalizarRegistrado(analisisUsados)) {
       setPaso('limite');
       return;
@@ -84,7 +90,6 @@ export function AnalizadorView() {
 
     setResultado(data);
 
-    // Guardar en DB si está logueado
     if (session?.user) {
       await guardarAnalisis(session.user.id, zonaSeleccionada, data);
       const nuevaCantidad = await getAnalisisUsadosPorCliente(session.user.id);
@@ -103,7 +108,11 @@ export function AnalizadorView() {
     setPaso('intro');
   }
 
-  // ── Renders por paso ───────────────────────────────────────────────────
+  // ── Flujo: reservar el servicio recomendado ────────────────────────────
+  function handleReservar(servicio: ServicioReservable) {
+    onReservarServicio?.(servicio);
+  }
+
   const analisisRestantes = LIMITES_ANALISIS.registrado - analisisUsados;
   const puedeAnalizar = analisisRestantes > 0;
 
@@ -283,7 +292,6 @@ export function AnalizadorView() {
       {/* ── Contenido principal por paso ────────────────────────────── */}
       <AnimatePresence mode="wait">
 
-        {/* INTRO */}
         {paso === 'intro' && (
           <motion.div
             key="intro"
@@ -349,7 +357,6 @@ export function AnalizadorView() {
           </motion.div>
         )}
 
-        {/* SELECTOR DE ZONA */}
         {paso === 'zona' && (
           <motion.div
             key="zona"
@@ -364,7 +371,6 @@ export function AnalizadorView() {
           </motion.div>
         )}
 
-        {/* CAPTURA DE FOTO */}
         {paso === 'foto' && zonaSeleccionada && (
           <motion.div
             key="foto"
@@ -381,7 +387,6 @@ export function AnalizadorView() {
           </motion.div>
         )}
 
-        {/* ANALIZANDO */}
         {paso === 'analizando' && (
           <motion.div
             key="analizando"
@@ -455,7 +460,6 @@ export function AnalizadorView() {
           </motion.div>
         )}
 
-        {/* RESULTADO */}
         {paso === 'resultado' && resultado && zonaSeleccionada && (
           <motion.div
             key="resultado"
@@ -468,13 +472,13 @@ export function AnalizadorView() {
               zona={zonaSeleccionada}
               imagenCapturada={imagenCapturada}
               onReiniciar={reiniciar}
+              onReservar={handleReservar}
               analisisRestantes={analisisRestantes - 1}
               puedeAnalizar={puedeAnalizar && analisisRestantes > 1}
             />
           </motion.div>
         )}
 
-        {/* LÍMITE ALCANZADO */}
         {paso === 'limite' && (
           <motion.div
             key="limite"

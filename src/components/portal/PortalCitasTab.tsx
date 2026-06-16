@@ -54,6 +54,7 @@ import {
   obtenerCrossSellPorServicio,
   type ServicioReservable,
 } from '@/lib/citasConstants';
+// Ya está importado ServicioReservable
 import { clienteDisplayName, firstNameOrFriendly } from '@/lib/perfilCliente';
 import { WHATSAPP_ADMIN_PHONE } from '@/lib/whatsapp';
 
@@ -110,6 +111,8 @@ export function PortalCitasTab(props: {
   sessions: PortalSesionResumen[];
   PortalTreatmentEmptyPlaceholder: (p: EmptyPhProps) => JSX.Element;
   buildWhatsAppHref: (svc: string) => string;
+  servicioPreseleccionado?: ServicioReservable | null;
+  onServicioConsumido?: () => void;
 }): JSX.Element {
   const { activeTreatment, sessions, PortalTreatmentEmptyPlaceholder, buildWhatsAppHref } = props;
   const { session, perfilCliente } = useAuth();
@@ -131,6 +134,27 @@ export function PortalCitasTab(props: {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [successSaved, setSuccessSaved] = useState<CitaClienteRow | null>(null);
+// Estado para servicio preseleccionado (viene del Analizador IA)
+const [servicioInicial, setServicioInicial] = useState<ServicioReservable | null>(null);
+
+// Si el padre nos pasa un servicio preseleccionado, abrimos el modal automáticamente
+useEffect(() => {
+  if (!props.servicioPreseleccionado) return;
+
+  // Guardar el servicio para pasarlo al modal
+  setServicioInicial(props.servicioPreseleccionado);
+
+  // Si no firmó consentimiento, abrir consentimiento primero
+  if (!consentFirmado && !consentNoMigrado) {
+    setConsentOpen(true);
+  } else {
+    setBookingOpen(true);
+  }
+
+  // Avisar al padre que ya consumimos el servicio
+  props.onServicioConsumido?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [props.servicioPreseleccionado]);
 
   const showDbHero =
     proximaCita && parseCitaMomentLocal(proximaCita).getTime() >= Date.now() - 60_000;
@@ -342,16 +366,21 @@ export function PortalCitasTab(props: {
       </AnimatePresence>
 
       <AnimatePresence>
-        {bookingOpen && uid && (
-          <CitasBookingModal
-            userId={uid}
-            onClose={() => setBookingOpen(false)}
-            onComplete={async (row) => {
-              await onBookingDone(row);
-            }}
-          />
-        )}
-      </AnimatePresence>
+  {bookingOpen && uid && (
+    <CitasBookingModal
+      userId={uid}
+      servicioInicial={servicioInicial}
+      onClose={() => {
+        setBookingOpen(false);
+        setServicioInicial(null);
+      }}
+      onComplete={async (row) => {
+        await onBookingDone(row);
+        setServicioInicial(null);
+      }}
+    />
+  )}
+</AnimatePresence>
 
       <AnimatePresence>
         {successSaved && (
@@ -669,14 +698,19 @@ function MesCalendarioUniversal(props: {
 
 function CitasBookingModal(props: {
   userId: string;
+  servicioInicial?: ServicioReservable | null;
   onClose: () => void;
   onComplete: (c: CitaClienteRow | null) => Promise<void>;
 }): JSX.Element | null {
   const todasFranjas = useMemo(() => generarFranjasComerciales(), []);
 
-  const [wizardStep, setWizardStep] = useState<1 | 2>(1);
+  const [wizardStep, setWizardStep] = useState<1 | 2>(
+  props.servicioInicial ? 2 : 1
+);
 
-  const [servicio, setServicio] = useState<ServicioReservable | null>(null);
+const [servicio, setServicio] = useState<ServicioReservable | null>(
+  props.servicioInicial ?? null
+);
   const pickInit = (): Date => {
     const x = new Date();
     x.setHours(12, 0, 0, 0);

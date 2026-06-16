@@ -9,8 +9,15 @@ import {
   MessageCircle,
   TrendingUp,
   ShieldCheck,
+  CalendarPlus,
+  Heart,
 } from 'lucide-react';
-import type { ResultadoAnalisisIA, ZonaCuerpo } from '@/lib/analizadorApi';
+import {
+  matchServicioReservable,
+  type ResultadoAnalisisIA,
+  type ZonaCuerpo,
+} from '@/lib/analizadorApi';
+import type { ServicioReservable } from '@/lib/citasConstants';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -19,6 +26,7 @@ interface Props {
   zona: ZonaCuerpo;
   imagenCapturada: File | null;
   onReiniciar: () => void;
+  onReservar?: (servicio: ServicioReservable) => void; // ← nuevo: callback para reservar
   analisisRestantes: number;
   puedeAnalizar: boolean;
 }
@@ -67,13 +75,18 @@ export function ResultadoAnalisis({
   zona,
   imagenCapturada,
   onReiniciar,
+  onReservar,
   analisisRestantes,
   puedeAnalizar,
 }: Props) {
   const badge = urgenciaBadge(resultado.nivel_urgencia);
 
-  // URL de preview de la imagen (si existe)
+  // URL de preview de la imagen
   const previewUrl = imagenCapturada ? URL.createObjectURL(imagenCapturada) : null;
+
+  // Intentar matchear el tratamiento recomendado con un servicio reservable
+  const servicioReservable = matchServicioReservable(resultado.tratamiento_recomendado);
+  const puedeReservar = !!servicioReservable && !!onReservar;
 
   // Link de WhatsApp con contexto del análisis
   const waTexto = encodeURIComponent(
@@ -95,14 +108,12 @@ export function ResultadoAnalisis({
           boxShadow: '0 12px 40px rgba(0,61,91,0.08)',
         }}
       >
-        {/* Círculo decorativo */}
         <div
           className="absolute -right-8 -top-8 h-32 w-32 rounded-full"
           style={{ background: 'rgba(242,215,213,0.25)' }}
         />
 
         <div className="relative flex items-start gap-4">
-          {/* Preview de imagen */}
           {previewUrl && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -141,7 +152,6 @@ export function ResultadoAnalisis({
               {resultado.tratamiento_recomendado}
             </h3>
 
-            {/* Badge urgencia */}
             <motion.span
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -208,7 +218,6 @@ export function ResultadoAnalisis({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {/* Sesiones */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -233,7 +242,6 @@ export function ResultadoAnalisis({
             </p>
           </motion.div>
 
-          {/* Frecuencia */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -310,42 +318,122 @@ export function ResultadoAnalisis({
         </motion.div>
       )}
 
-      {/* ── CTA WhatsApp ─────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="rounded-3xl p-5 text-center"
-        style={{
-          background: 'linear-gradient(135deg, #003D5B 0%, #005580 100%)',
-          boxShadow: '0 16px 48px rgba(0,61,91,0.25)',
-        }}
-      >
-        <p className="mb-1 text-sm font-semibold text-white">
-          ¿Querés empezar este tratamiento?
-        </p>
-        <p
-          className="mb-4 text-xs"
-          style={{ color: 'rgba(253,248,245,0.75)' }}
-        >
-          Nuestras especialistas te esperan para una consulta personalizada
-        </p>
-        <motion.a
-          href={waHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white"
+      {/* ── CTA PRINCIPAL: Agendar ahora (si hay servicio reservable) ─ */}
+      {puedeReservar && servicioReservable ? (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="relative overflow-hidden rounded-3xl p-6 text-center"
           style={{
-            background: '#25D366',
-            boxShadow: '0 8px 24px rgba(37,211,102,0.3)',
+            background: 'linear-gradient(135deg, #003D5B 0%, #005580 100%)',
+            boxShadow: '0 16px 48px rgba(0,61,91,0.28)',
           }}
         >
-          <MessageCircle className="h-4 w-4" />
-          Reservar consulta por WhatsApp
-        </motion.a>
-      </motion.div>
+          {/* Decorativos */}
+          <div
+            className="absolute -right-8 -top-8 h-28 w-28 rounded-full"
+            style={{ background: 'rgba(242,215,213,0.15)' }}
+          />
+          <div
+            className="absolute -bottom-6 -left-6 h-20 w-20 rounded-full"
+            style={{ background: 'rgba(191,201,162,0.12)' }}
+          />
+
+          {/* Shimmer */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent"
+            initial={{ x: '-100%' }}
+            animate={{ x: '200%' }}
+            transition={{ duration: 3, repeat: Infinity, repeatDelay: 4 }}
+          />
+
+          <div className="relative">
+            <Heart
+              className="mx-auto mb-3 h-7 w-7"
+              fill="#F2D7D5"
+              style={{ color: '#F2D7D5' }}
+            />
+            <h4
+              className="text-serif-premium mb-2 text-lg font-bold text-white"
+            >
+              Agendá tu turno ahora
+            </h4>
+            <p
+              className="mx-auto mb-5 max-w-xs text-sm leading-relaxed"
+              style={{ color: 'rgba(253,248,245,0.85)' }}
+            >
+              Empezá a darle el amor y cuidado que tu piel merece. Elegí día y hora en nuestra agenda.
+            </p>
+
+            <motion.button
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onReservar?.(servicioReservable)}
+              className="inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-semibold"
+              style={{
+                background: 'white',
+                color: 'var(--primary-navy)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+              }}
+            >
+              <CalendarPlus className="h-4 w-4" />
+              Reservar {servicioReservable}
+            </motion.button>
+
+            {/* Alternativa WhatsApp */}
+            <motion.a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 block text-xs"
+              style={{ color: 'rgba(253,248,245,0.7)' }}
+            >
+              o consultar por{' '}
+              <span className="font-semibold underline" style={{ color: '#25D366' }}>
+                WhatsApp
+              </span>
+            </motion.a>
+          </div>
+        </motion.div>
+      ) : (
+        /* ── Fallback: solo WhatsApp si no hay servicio matcheable ── */
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="rounded-3xl p-5 text-center"
+          style={{
+            background: 'linear-gradient(135deg, #003D5B 0%, #005580 100%)',
+            boxShadow: '0 16px 48px rgba(0,61,91,0.25)',
+          }}
+        >
+          <p className="mb-1 text-sm font-semibold text-white">
+            ¿Querés empezar este tratamiento?
+          </p>
+          <p
+            className="mb-4 text-xs"
+            style={{ color: 'rgba(253,248,245,0.75)' }}
+          >
+            Nuestras especialistas te esperan para una consulta personalizada
+          </p>
+          <motion.a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white"
+            style={{
+              background: '#25D366',
+              boxShadow: '0 8px 24px rgba(37,211,102,0.3)',
+            }}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Reservar consulta por WhatsApp
+          </motion.a>
+        </motion.div>
+      )}
 
       {/* ── Acciones finales ─────────────────────────────────────────── */}
       <motion.div
@@ -354,7 +442,6 @@ export function ResultadoAnalisis({
         transition={{ delay: 0.6 }}
         className="flex flex-col gap-3 sm:flex-row"
       >
-        {/* Nuevo análisis (si tiene créditos) */}
         {puedeAnalizar && (
           <motion.button
             whileHover={{ scale: 1.02, y: -1 }}
@@ -379,7 +466,6 @@ export function ResultadoAnalisis({
           </motion.button>
         )}
 
-        {/* Volver al inicio siempre */}
         <motion.button
           whileHover={{ scale: 1.02, y: -1 }}
           whileTap={{ scale: 0.98 }}
@@ -396,7 +482,6 @@ export function ResultadoAnalisis({
         </motion.button>
       </motion.div>
 
-      {/* Nota análisis restantes */}
       {!puedeAnalizar && (
         <motion.p
           initial={{ opacity: 0 }}

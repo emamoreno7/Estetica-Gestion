@@ -1,7 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, CheckCircle2, Clock, Loader2, X } from 'lucide-react';
-import { actualizarCitaAdmin, type CitaClienteRow, type CitaEstado } from '@/lib/citasApi';
+import { AlertTriangle, CalendarDays, CheckCircle2, Clock, Loader2, X } from 'lucide-react';
+import {
+  actualizarCitaAdmin,
+  fetchHorasOcupadasPorFecha,
+  type CitaClienteRow,
+  type CitaEstado,
+} from '@/lib/citasApi';
+import { insertNotificacion } from '@/lib/notificacionesApi';
+import { format, parseISO } from 'date-fns';
+import { es as esLocale } from 'date-fns/locale';
 
 const ESTADOS: { value: CitaEstado; label: string }[] = [
   { value: 'pendiente', label: '⏳ Pendiente' },
@@ -27,10 +35,37 @@ export default function EditarCitaModal(props: {
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
-  const cambiosHechos =
+    const cambiosHechos =
     fecha !== cita.fecha || hora !== horaInicial || estado !== cita.estado;
 
-  async function guardar() {
+  const cambioFechaHora = fecha !== cita.fecha || hora !== horaInicial;
+
+  // Verificar conflicto de horario (otra cita ya ocupa ese slot)
+  const [horarioOcupado, setHorarioOcupado] = useState(false);
+
+  useEffect(() => {
+    if (!cambioFechaHora) {
+      setHorarioOcupado(false);
+      return;
+    }
+    let cancel = false;
+    (async () => {
+      const { horasOcupadas } = await fetchHorasOcupadasPorFecha(fecha);
+      if (cancel) return;
+      // Filtrar la hora actual de ESTA cita (no es conflicto consigo misma)
+      const ocupadasOtras = horasOcupadas.filter((h) => {
+        if (fecha === cita.fecha && h.slice(0, 5) === horaInicial) return false;
+        return true;
+      });
+      const ocupado = ocupadasOtras.some((h) => h.slice(0, 5) === hora);
+      setHorarioOcupado(ocupado);
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [fecha, hora, cambioFechaHora, cita.fecha, horaInicial]);
+
+    async function guardar() {
     if (!cambiosHechos || saving) return;
     setSaving(true);
     setErrMsg(null);
@@ -46,6 +81,22 @@ export default function EditarCitaModal(props: {
       setErrMsg(error);
       return;
     }
+
+    // 🔔 Notificar al cliente si cambió la fecha u hora
+    if (cambioFechaHora) {
+      try {
+        const fechaLegible = format(parseISO(fecha), "d 'de' MMMM", { locale: esLocale });
+        void insertNotificacion({
+          clienteId: cita.cliente_id,
+          kind: 'cita_actualizada',
+          title: 'Tu cita fue actualizada 📅',
+          body: `Tu turno de ${cita.servicio} fue reagendado para ${fechaLegible}, ${hora} hs. Si tenés alguna consulta, escribinos por WhatsApp.`,
+        });
+      } catch {
+        // Silencioso: la cita se guardó OK aunque falle la notif
+      }
+    }
+
     await props.onSaved();
   }
 
@@ -154,6 +205,22 @@ export default function EditarCitaModal(props: {
               ))}
             </div>
           </section>
+                    {/* Advertencia horario ocupado */}
+          {horarioOcupado ? (
+            <div
+              className="mt-5 flex items-start gap-2 rounded-xl border px-3 py-2.5"
+              style={{
+                borderColor: 'rgba(245,158,11,0.45)',
+                background: 'rgba(254,243,199,0.55)',
+              }}
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" />
+              <p className="text-[10px] leading-relaxed text-amber-900">
+                <strong>Atención:</strong> ese horario ya tiene otra cita agendada. Se puede guardar
+                igual si atendés a dos personas en simultáneo, pero confirmá que esté todo bien.
+              </p>
+            </div>
+          ) : null}
 
           {/* Info */}
           <div className="mt-5 rounded-xl bg-[#BFC9A2]/12 px-3 py-2.5 text-[10px] leading-relaxed text-[#003D5B]/70">

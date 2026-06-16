@@ -268,3 +268,38 @@ export async function getHistorialAnalisis(
 
   return { data: (data as AnalisisRealizado[]) ?? [], error: null };
 }
+// ─── Matching con servicios reservables del portal ──────────────────────────
+
+import {
+  CITAS_SERVICIOS_RESERVABLES,
+  type ServicioReservable,
+} from './citasConstants';
+
+/**
+ * Intenta matchear el nombre del tratamiento recomendado por la IA
+ * con un servicio reservable del portal.
+ *
+ * Devuelve el ServicioReservable exacto si hay match, o null si no.
+ */
+export function matchServicioReservable(
+  nombreRecomendado: string
+): ServicioReservable | null {
+  const target = nombreRecomendado.trim().toLowerCase();
+
+  // 1. Match exacto (case-insensitive)
+  const exacto = CITAS_SERVICIOS_RESERVABLES.find(
+    (s) => s.toLowerCase() === target
+  );
+  if (exacto) return exacto;
+
+  // 2. Match por inclusión bidireccional
+  // (ej: "Radiofrecuencia facial" matchea con "Radiofrecuencia")
+  const incluye = CITAS_SERVICIOS_RESERVABLES.find((s) => {
+    const sLower = s.toLowerCase();
+    return target.includes(sLower) || sLower.includes(target);
+  });
+  if (incluye) return incluye;
+
+  // 3. Sin match
+  return null;
+}
