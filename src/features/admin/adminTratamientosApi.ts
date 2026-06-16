@@ -217,6 +217,33 @@ export async function actualizarEstadoTratamiento(
 
   return { error: error ? mapRlsError(error) : null };
 }
+/** Actualizar campos editables del tratamiento (sesiones totales, precio, fecha inicio, etc.) */
+export async function actualizarTratamiento(
+  id: string,
+  cambios: {
+    sesionesTotales?: number;
+    precioTotal?: number;
+    fechaInicio?: string;
+    profesional?: string;
+    notas?: string | null;
+  }
+): Promise<{ error: string | null }> {
+  const patch: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (cambios.sesionesTotales !== undefined) patch.sesiones_totales = cambios.sesionesTotales;
+  if (cambios.precioTotal !== undefined) patch.precio_total = cambios.precioTotal;
+  if (cambios.fechaInicio !== undefined) patch.fecha_inicio = cambios.fechaInicio;
+  if (cambios.profesional !== undefined) patch.profesional = cambios.profesional;
+  if (cambios.notas !== undefined) patch.notas = cambios.notas;
+
+  const { error } = await supabase
+    .from('tratamientos_cliente')
+    .update(patch)
+    .eq('id', id);
+
+  return { error: error ? mapRlsError(error) : null };
+}
 
 /** Eliminar tratamiento (con sus sesiones y fotos por CASCADE) */
 export async function eliminarTratamiento(id: string): Promise<{ error: string | null }> {

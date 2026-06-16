@@ -38,6 +38,7 @@ import AsignarTratamientoModal from './AsignarTratamientoModal';
 import SubirFotoModal from './SubirFotoModal';
 import EditarCitaModal from './EditarCitaModal';
 import EditarSesionModal from './EditarSesionModal';
+import EditarTratamientoModal from './EditarTratamientoModal';
 import { insertNotificacion } from '@/lib/notificacionesApi';
 
 type TabId = 'tratamientos' | 'citas' | 'datos';
@@ -71,13 +72,14 @@ export default function ClienteDrawer(props: {
 
   // Modales secundarios
   const [sesionTrat, setSesionTrat] = useState<TratamientoClienteRow | null>(null);
-  const [fotoTrat, setFotoTrat] = useState<TratamientoClienteRow | null>(null);
-  const [editarCita, setEditarCita] = useState<CitaClienteRow | null>(null);
-  const [editarSesion, setEditarSesion] = useState<{
+const [fotoTrat, setFotoTrat] = useState<TratamientoClienteRow | null>(null);
+const [editarCita, setEditarCita] = useState<CitaClienteRow | null>(null);
+const [editarSesion, setEditarSesion] = useState<{
   sesion: SesionRow;
   servicioNombre: string;
 } | null>(null);
-  const [asignarOpen, setAsignarOpen] = useState(false);
+const [asignarOpen, setAsignarOpen] = useState(false);
+const [editarTrat, setEditarTrat] = useState<TratamientoClienteRow | null>(null);
 
   // ─── Cargar tratamientos del cliente ──────────────────────
   const loadTratamientos = useCallback(async () => {
@@ -286,6 +288,7 @@ export default function ClienteDrawer(props: {
     onEliminar={(t) => void borrarTrat(t)}
     onEditarSesion={(s, servicioNombre) => setEditarSesion({ sesion: s, servicioNombre })}
     onEliminarSesion={(s, t) => void borrarSesion(s, t)}
+    onEditarTratamiento={(t) => setEditarTrat(t)}
     onAsignarNuevo={() => setAsignarOpen(true)}
   />
 ) : null}
@@ -358,6 +361,16 @@ export default function ClienteDrawer(props: {
     }}
   />
 ) : null}
+{editarTrat ? (
+  <EditarTratamientoModal
+    tratamiento={editarTrat}
+    onClose={() => setEditarTrat(null)}
+    onSaved={async () => {
+      setEditarTrat(null);
+      await loadTratamientos();
+    }}
+  />
+) : null}
       </AnimatePresence>
     </>
   );
@@ -411,6 +424,7 @@ function TabTratamientos(props: {
   onEliminar: (t: TratamientoClienteRow) => void;
   onEditarSesion: (s: SesionRow, servicioNombre: string) => void;
   onEliminarSesion: (s: SesionRow, t: TratamientoClienteRow) => void;
+  onEditarTratamiento: (t: TratamientoClienteRow) => void;
   onAsignarNuevo: () => void;
 }) {
   if (props.loading) {
@@ -464,6 +478,7 @@ function TabTratamientos(props: {
   onEliminar={() => props.onEliminar(t)}
   onEditarSesion={props.onEditarSesion}
   onEliminarSesion={(s) => props.onEliminarSesion(s, t)}
+  onEditarTratamiento={() => props.onEditarTratamiento(t)}
 />
         ))}
       </ul>
@@ -479,6 +494,7 @@ function TratamientoCard(props: {
   onEliminar: () => void;
   onEditarSesion: (s: SesionRow, servicioNombre: string) => void;
   onEliminarSesion: (s: SesionRow) => void;
+  onEditarTratamiento: () => void;
 }) {
   const { tratamiento: t } = props;
   const [expanded, setExpanded] = useState(false);
@@ -574,60 +590,67 @@ function TratamientoCard(props: {
         </button>
       </div>
 
-      {/* Acciones */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={props.onRegistrarSesion}
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#003D5B] px-3 py-1.5 text-[11px] font-semibold text-white"
-        >
-          <Plus className="h-3.5 w-3.5" /> Sesión
-        </button>
-        <button
-          type="button"
-          onClick={props.onSubirFoto}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#B8956E]/45 bg-[#B8956E]/10 px-3 py-1.5 text-[11px] font-semibold text-[#8B6F4E]"
-        >
-          <Camera className="h-3.5 w-3.5" /> Foto
-        </button>
-        <div className="relative">
+     {/* Acciones */}
+<div className="mt-4 flex flex-wrap gap-2">
+  <button
+    type="button"
+    onClick={props.onRegistrarSesion}
+    className="inline-flex items-center gap-1.5 rounded-full bg-[#003D5B] px-3 py-1.5 text-[11px] font-semibold text-white"
+  >
+    <Plus className="h-3.5 w-3.5" /> Sesión
+  </button>
+  <button
+    type="button"
+    onClick={props.onSubirFoto}
+    className="inline-flex items-center gap-1.5 rounded-full border border-[#B8956E]/45 bg-[#B8956E]/10 px-3 py-1.5 text-[11px] font-semibold text-[#8B6F4E]"
+  >
+    <Camera className="h-3.5 w-3.5" /> Foto
+  </button>
+  <div className="relative">
+    <button
+      type="button"
+      onClick={() => setMenuOpen((v) => !v)}
+      className="inline-flex items-center gap-1.5 rounded-full border border-[#003D5B]/15 bg-white px-3 py-1.5 text-[11px] font-semibold text-[#003D5B]"
+    >
+      Estado
+    </button>
+    {menuOpen ? (
+      <div
+        className="absolute left-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-xl border bg-white shadow-lg"
+        style={{ borderColor: 'rgba(242,215,213,0.7)' }}
+      >
+        {(['activo', 'pausado', 'finalizado', 'cancelado'] as const).map((e) => (
           <button
+            key={e}
             type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#003D5B]/15 bg-white px-3 py-1.5 text-[11px] font-semibold text-[#003D5B]"
+            disabled={t.estado === e}
+            onClick={() => {
+              setMenuOpen(false);
+              props.onCambiarEstado(e);
+            }}
+            className="block w-full px-3 py-2 text-left text-xs text-[#003D5B] hover:bg-[#F2D7D5]/25 disabled:opacity-40"
           >
-            Estado
+            {estadoLabel(e)}
           </button>
-          {menuOpen ? (
-            <div
-              className="absolute left-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-xl border bg-white shadow-lg"
-              style={{ borderColor: 'rgba(242,215,213,0.7)' }}
-            >
-              {(['activo', 'pausado', 'finalizado', 'cancelado'] as const).map((e) => (
-                <button
-                  key={e}
-                  type="button"
-                  disabled={t.estado === e}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    props.onCambiarEstado(e);
-                  }}
-                  className="block w-full px-3 py-2 text-left text-xs text-[#003D5B] hover:bg-[#F2D7D5]/25 disabled:opacity-40"
-                >
-                  {estadoLabel(e)}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          onClick={props.onEliminar}
-          className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-800"
-        >
-          <Trash2 className="h-3.5 w-3.5" /> Eliminar
-        </button>
+        ))}
       </div>
+    ) : null}
+  </div>
+  <button
+    type="button"
+    onClick={props.onEditarTratamiento}
+    className="inline-flex items-center gap-1.5 rounded-full border border-[#003D5B]/15 bg-white px-3 py-1.5 text-[11px] font-semibold text-[#003D5B] transition hover:bg-[#003D5B]/5"
+  >
+    <Pencil className="h-3.5 w-3.5" /> Editar plan
+  </button>
+  <button
+    type="button"
+    onClick={props.onEliminar}
+    className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-800"
+  >
+    <Trash2 className="h-3.5 w-3.5" /> Eliminar
+  </button>
+</div>
 
       {/* Detalle expandido */}
       <AnimatePresence>
