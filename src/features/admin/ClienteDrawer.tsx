@@ -22,6 +22,7 @@ import { es as esLocale } from 'date-fns/locale';
 import type { PerfilClienteRow } from '@/lib/perfilCliente';
 import {
   actualizarEstadoTratamiento,
+  eliminarSesion,
   eliminarTratamiento,
   listFotosByTratamiento,
   listSesionesByTratamiento,
@@ -37,6 +38,7 @@ import AsignarTratamientoModal from './AsignarTratamientoModal';
 import SubirFotoModal from './SubirFotoModal';
 import EditarCitaModal from './EditarCitaModal';
 import EditarSesionModal from './EditarSesionModal';
+import { insertNotificacion } from '@/lib/notificacionesApi';
 
 type TabId = 'tratamientos' | 'citas' | 'datos';
 
@@ -128,7 +130,7 @@ export default function ClienteDrawer(props: {
     await loadTratamientos();
   }
 
-  async function borrarTrat(t: TratamientoClienteRow) {
+    async function borrarTrat(t: TratamientoClienteRow) {
     if (
       !window.confirm(
         `¿Eliminar el tratamiento "${t.servicio_nombre}"?\n\nSe borrarán sesiones y fotos asociadas.`
@@ -143,6 +145,32 @@ export default function ClienteDrawer(props: {
     await loadTratamientos();
   }
 
+  async function borrarSesion(s: SesionRow, t: TratamientoClienteRow) {
+    if (
+      !window.confirm(
+        `¿Eliminar la sesión #${s.numero_sesion} del ${s.fecha_sesion}?\n\nEsta acción no se puede deshacer.`
+      )
+    )
+      return;
+
+    const { error } = await eliminarSesion(s.id);
+    if (error) {
+      setErrMsg(error);
+      return;
+    }
+
+    // 🔔 Notificar al cliente
+    void insertNotificacion({
+      clienteId: cliente.id,
+      kind: 'admin_mensaje',
+      title: 'Sesión actualizada',
+      body: `Una sesión de tu tratamiento "${t.servicio_nombre}" fue eliminada del registro. Si tenés dudas, contactanos.`,
+      tratamientoId: t.id,
+    });
+
+    await loadTratamientos();
+  }
+  
   return (
     <>
       <motion.div
@@ -249,17 +277,18 @@ export default function ClienteDrawer(props: {
             {/* ─── Contenido ──────────────────────────────── */}
             <div className="flex-1 overflow-y-auto px-6 py-5 sm:px-8">
                             {tab === 'tratamientos' ? (
-                <TabTratamientos
-                  loading={loadingTrat}
-                  tratamientos={tratamientos}
-                  onRegistrarSesion={(t) => setSesionTrat(t)}
-                  onSubirFoto={(t) => setFotoTrat(t)}
-                  onCambiarEstado={(t, e) => void cambiarEstadoTrat(t, e)}
-                  onEliminar={(t) => void borrarTrat(t)}
-                  onEditarSesion={(s, servicioNombre) => setEditarSesion({ sesion: s, servicioNombre })}
-                  onAsignarNuevo={() => setAsignarOpen(true)}
-                />
-              ) : null}
+  <TabTratamientos
+    loading={loadingTrat}
+    tratamientos={tratamientos}
+    onRegistrarSesion={(t) => setSesionTrat(t)}
+    onSubirFoto={(t) => setFotoTrat(t)}
+    onCambiarEstado={(t, e) => void cambiarEstadoTrat(t, e)}
+    onEliminar={(t) => void borrarTrat(t)}
+    onEditarSesion={(s, servicioNombre) => setEditarSesion({ sesion: s, servicioNombre })}
+    onEliminarSesion={(s, t) => void borrarSesion(s, t)}
+    onAsignarNuevo={() => setAsignarOpen(true)}
+  />
+) : null}
 
               {tab === 'citas' ? (
                 <TabCitas
@@ -381,6 +410,7 @@ function TabTratamientos(props: {
   onCambiarEstado: (t: TratamientoClienteRow, e: TratamientoEstado) => void;
   onEliminar: (t: TratamientoClienteRow) => void;
   onEditarSesion: (s: SesionRow, servicioNombre: string) => void;
+  onEliminarSesion: (s: SesionRow, t: TratamientoClienteRow) => void;
   onAsignarNuevo: () => void;
 }) {
   if (props.loading) {
@@ -426,14 +456,15 @@ function TabTratamientos(props: {
       <ul className="space-y-3">
         {props.tratamientos.map((t) => (
           <TratamientoCard
-            key={t.id}
-            tratamiento={t}
-            onRegistrarSesion={() => props.onRegistrarSesion(t)}
-            onSubirFoto={() => props.onSubirFoto(t)}
-            onCambiarEstado={(e) => props.onCambiarEstado(t, e)}
-            onEliminar={() => props.onEliminar(t)}
-            onEditarSesion={props.onEditarSesion}
-          />
+  key={t.id}
+  tratamiento={t}
+  onRegistrarSesion={() => props.onRegistrarSesion(t)}
+  onSubirFoto={() => props.onSubirFoto(t)}
+  onCambiarEstado={(e) => props.onCambiarEstado(t, e)}
+  onEliminar={() => props.onEliminar(t)}
+  onEditarSesion={props.onEditarSesion}
+  onEliminarSesion={(s) => props.onEliminarSesion(s, t)}
+/>
         ))}
       </ul>
     </div>
@@ -447,6 +478,7 @@ function TratamientoCard(props: {
   onCambiarEstado: (e: TratamientoEstado) => void;
   onEliminar: () => void;
   onEditarSesion: (s: SesionRow, servicioNombre: string) => void;
+  onEliminarSesion: (s: SesionRow) => void;
 }) {
   const { tratamiento: t } = props;
   const [expanded, setExpanded] = useState(false);
@@ -625,35 +657,47 @@ function TratamientoCard(props: {
                     <ul className="space-y-1.5">
                       {sesiones.map((s) => (
                         <li
-                          key={s.id}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-[#F2D7D5]/55 bg-white/80 px-3 py-2"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-semibold text-[#003D5B]">
-                              Sesión #{s.numero_sesion} ·{' '}
-                              {format(new Date(s.fecha_sesion + 'T12:00:00'), 'd MMM yyyy', {
-                                locale: esLocale,
-                              })}
-                              {s.hora_sesion ? ` · ${s.hora_sesion.slice(0, 5)} hs` : ''}
-                            </p>
-                            <p className="text-[10px] text-[#7A746E]">
-                              {s.profesional} · +{s.puntos_otorgados} pts
-                            </p>
-                            {s.observaciones ? (
-                              <p className="mt-1 line-clamp-2 text-[10px] italic text-[#7A746E]">
-                                {s.observaciones}
-                              </p>
-                            ) : null}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => props.onEditarSesion(s, t.servicio_nombre)}
-                            className="shrink-0 rounded-full border border-[#003D5B]/15 bg-white p-1.5 text-[#003D5B]"
-                            aria-label="Editar sesión"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </button>
-                        </li>
+  key={s.id}
+  className="flex items-center justify-between gap-3 rounded-xl border border-[#F2D7D5]/55 bg-white/80 px-3 py-2"
+>
+  <div className="min-w-0 flex-1">
+    <p className="text-xs font-semibold text-[#003D5B]">
+      Sesión #{s.numero_sesion} ·{' '}
+      {format(new Date(s.fecha_sesion + 'T12:00:00'), 'd MMM yyyy', {
+        locale: esLocale,
+      })}
+      {s.hora_sesion ? ` · ${s.hora_sesion.slice(0, 5)} hs` : ''}
+    </p>
+    <p className="text-[10px] text-[#7A746E]">
+      {s.profesional} · +{s.puntos_otorgados} pts
+    </p>
+    {s.observaciones ? (
+      <p className="mt-1 line-clamp-2 text-[10px] italic text-[#7A746E]">
+        {s.observaciones}
+      </p>
+    ) : null}
+  </div>
+  <div className="flex shrink-0 items-center gap-1">
+    <button
+      type="button"
+      onClick={() => props.onEditarSesion(s, t.servicio_nombre)}
+      className="rounded-full border border-[#003D5B]/15 bg-white p-1.5 text-[#003D5B] transition hover:bg-[#003D5B]/5"
+      aria-label="Editar sesión"
+      title="Editar sesión"
+    >
+      <Pencil className="h-3 w-3" />
+    </button>
+    <button
+      type="button"
+      onClick={() => props.onEliminarSesion(s)}
+      className="rounded-full border border-red-200 bg-red-50 p-1.5 text-red-700 transition hover:bg-red-100"
+      aria-label="Eliminar sesión"
+      title="Eliminar sesión"
+    >
+      <Trash2 className="h-3 w-3" />
+    </button>
+  </div>
+</li>
                       ))}
                     </ul>
                   )}
