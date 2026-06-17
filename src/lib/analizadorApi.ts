@@ -31,51 +31,57 @@ export type ZonaCuerpo =
 
 export interface ResultadoAnalisisIA {
   zona: ZonaCuerpo;
-  diagnostico: string;           // Descripción breve de lo observado
-  tratamiento_recomendado: string; // Nombre del servicio del catálogo Amore
+  diagnostico: string;
+  tratamiento_recomendado: string;
   sesiones_recomendadas: number;
-  frecuencia: string;            // Ej: "1 vez por semana"
-  tips: string[];                // Array de 3-4 consejos
-  nivel_urgencia: "bajo" | "medio" | "alto"; // Para colorear UI
+  frecuencia: string;
+  tips: string[];
+  nivel_urgencia: "bajo" | "medio" | "alto";
 }
 
 export interface AnalisisRealizado {
   id?: string;
-  cliente_id?: string | null;    // null si es anónimo
+  cliente_id?: string | null;
   zona: ZonaCuerpo;
   imagen_url?: string | null;
   resultado: ResultadoAnalisisIA;
   created_at?: string;
 }
 
+/**
+ * Tipos de error que puede devolver el analizador.
+ * - imagen_no_valida: la foto no muestra piel humana / es un objeto / etc
+ * - imagen_baja_calidad: borrosa, oscura, pixelada
+ * - zona_no_coincide: el usuario eligió rostro pero subió mano (por ej)
+ * - limite_anonimo / limite_registrado: superó la cuota
+ * - red: sin conexión o error HTTP
+ * - desconocido: cualquier otro caso
+ */
 export interface ErrorAnalisis {
-  tipo: "limite_anonimo" | "limite_registrado" | "imagen_invalida" | "red" | "desconocido";
+  tipo:
+    | "limite_anonimo"
+    | "limite_registrado"
+    | "imagen_no_valida"
+    | "imagen_baja_calidad"
+    | "zona_no_coincide"
+    | "red"
+    | "desconocido";
   mensaje: string;
 }
 
 // ─── Control de límites ──────────────────────────────────────────────────────
 
-/**
- * Devuelve cuántos análisis anónimos se usaron (desde localStorage).
- */
 export function getAnalisisAnonimoUsados(): number {
   const raw = localStorage.getItem(LS_KEY_ANONIMO);
   const parsed = parseInt(raw ?? "0", 10);
   return isNaN(parsed) ? 0 : parsed;
 }
 
-/**
- * Incrementa el contador de análisis anónimos en localStorage.
- */
 export function incrementarAnalisisAnonimo(): void {
   const actual = getAnalisisAnonimoUsados();
   localStorage.setItem(LS_KEY_ANONIMO, String(actual + 1));
 }
 
-/**
- * Verifica si el usuario (anónimo o registrado) puede hacer un nuevo análisis.
- * Para registrados, recibe la cantidad de análisis ya guardados en DB.
- */
 export function puedeAnalizarAnonimo(): boolean {
   return getAnalisisAnonimoUsados() < LIMITES_ANALISIS.anonimo;
 }
@@ -86,15 +92,11 @@ export function puedeAnalizarRegistrado(analisisUsadosEnDB: number): boolean {
 
 // ─── Conversión de imagen ────────────────────────────────────────────────────
 
-/**
- * Convierte un File/Blob a base64 (string sin el prefijo data:...;base64,).
- */
 export async function fileToBase64(file: File | Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Removemos el prefijo "data:image/jpeg;base64," etc.
       const base64 = result.split(",")[1];
       resolve(base64);
     };
@@ -103,69 +105,124 @@ export async function fileToBase64(file: File | Blob): Promise<string> {
   });
 }
 
-/**
- * Detecta el media type de un File para enviarlo correctamente.
- */
 export function getMediaType(file: File): string {
-  // Normalizamos: si es webp u otro formato, Claude lo acepta igual
   const tipo = file.type || "image/jpeg";
   const permitidos = ["image/jpeg", "image/png", "image/gif", "image/webp"];
   return permitidos.includes(tipo) ? tipo : "image/jpeg";
 }
 
+// ─── Helper: mapear código de error del backend → ErrorAnalisis ────────────
+
+function mapearErrorBackend(codigo: string, mensaje: string): ErrorAnalisis {
+  switch (codigo) {
+    case "imagen_no_valida":
+      return {
+        tipo: "imagen_no_valida",
+        mensaje:
+          mensaje ||
+          "La imagen no muestra piel humana apta para análisis. Probá con una foto clara de la zona.",
+      };
+    case "imagen_baja_calidad":
+      return {
+        tipo: "imagen_baja_calidad",
+        mensaje:
+          mensaje ||
+          "La imagen no tiene calidad suficiente. Probá con mejor luz y más cerca.",
+      };
+    case "zona_no_coincide":
+      return {
+        tipo: "zona_no_coincide",
+        mensaje:
+          mensaje ||
+          "La zona de la imagen no coincide con la que seleccionaste. Revisá o subí otra foto.",
+      };
+    default:
+      return {
+        tipo: "desconocido",
+        mensaje: mensaje || "Ocurrió un error inesperado. Intentá más tarde.",
+      };
+  }
+}
+
 // ─── Llamada principal a la Edge Function ────────────────────────────────────
 
-/**
- * Envía la imagen a la Edge Function y devuelve el análisis de IA.
- *
- * @param zona     - Zona del cuerpo seleccionada
- * @param imagen   - File capturado desde cámara o galería
- * @returns        - { data: ResultadoAnalisisIA } o { error: ErrorAnalisis }
- */
 export async function analizarZona(
   zona: ZonaCuerpo,
   imagen: File
 ): Promise<{ data: ResultadoAnalisisIA | null; error: ErrorAnalisis | null }> {
   try {
-    // 1. Convertir imagen a base64
     const imagenBase64 = await fileToBase64(imagen);
     const mediaType = getMediaType(imagen);
 
-    // 2. Construir payload
     const payload = {
       zona,
       imagen_base64: imagenBase64,
       media_type: mediaType,
     };
 
-    // 3. Llamar a la Edge Function
     const response = await fetch(EDGE_FUNCTION_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // La anon key permite el acceso público (JWT verification desactivado)
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify(payload),
     });
 
-    // 4. Manejar errores HTTP
+    // ── Manejo de errores con respuesta JSON estructurada ────────────
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error("[analizadorApi] Edge Function error:", response.status, errorBody);
+      let errorJson: { codigo?: string; mensaje?: string; error?: string } = {};
+      try {
+        errorJson = await response.json();
+      } catch {
+        // No es JSON, fallback al texto
+        const errorText = await response.text().catch(() => "");
+        console.error(
+          "[analizadorApi] Edge Function error:",
+          response.status,
+          errorText
+        );
+        return {
+          data: null,
+          error: {
+            tipo: "red",
+            mensaje: `Error del servidor (${response.status}). Intentá de nuevo.`,
+          },
+        };
+      }
+
+      console.warn(
+        "[analizadorApi] Rechazo del backend:",
+        response.status,
+        errorJson
+      );
+
+      // Si tiene código específico, mapearlo
+      if (errorJson.codigo) {
+        return {
+          data: null,
+          error: mapearErrorBackend(
+            errorJson.codigo,
+            errorJson.mensaje ?? errorJson.error ?? ""
+          ),
+        };
+      }
+
+      // Sin código → error de red genérico
       return {
         data: null,
         error: {
           tipo: "red",
-          mensaje: `Error del servidor (${response.status}). Intentá de nuevo.`,
+          mensaje:
+            errorJson.mensaje ??
+            errorJson.error ??
+            `Error del servidor (${response.status}).`,
         },
       };
     }
 
-    // 5. Parsear respuesta
+    // ── Respuesta OK → parsear resultado ─────────────────────────────
     const json = await response.json();
-
-    // La Edge Function devuelve el objeto directamente o dentro de { resultado }
     const resultado: ResultadoAnalisisIA = json.resultado ?? json;
 
     return { data: resultado, error: null };
@@ -173,7 +230,6 @@ export async function analizarZona(
   } catch (err) {
     console.error("[analizadorApi] Error inesperado:", err);
 
-    // Error de red (sin conexión, CORS, etc.)
     if (err instanceof TypeError && err.message.includes("fetch")) {
       return {
         data: null,
@@ -194,19 +250,10 @@ export async function analizarZona(
   }
 }
 
-// ─── Guardar análisis en Supabase (para usuarios registrados) ────────────────
+// ─── Guardar análisis en Supabase ────────────────────────────────────────────
 
 import { supabase } from "./supabaseClient";
 
-/**
- * Guarda el resultado del análisis en la tabla `analisis_piel`.
- * Solo se llama si el usuario está logueado.
- *
- * @param clienteId  - UUID del cliente autenticado
- * @param zona       - Zona analizada
- * @param resultado  - Resultado devuelto por la IA
- * @returns          - { data: AnalisisRealizado } o { error }
- */
 export async function guardarAnalisis(
   clienteId: string,
   zona: ZonaCuerpo,
@@ -217,7 +264,7 @@ export async function guardarAnalisis(
     .insert({
       cliente_id: clienteId,
       zona,
-      resultado, // Se guarda como JSONB
+      resultado,
     })
     .select()
     .single();
@@ -230,9 +277,6 @@ export async function guardarAnalisis(
   return { data: data as AnalisisRealizado, error: null };
 }
 
-/**
- * Obtiene la cantidad de análisis que ya usó un cliente registrado.
- */
 export async function getAnalisisUsadosPorCliente(
   clienteId: string
 ): Promise<number> {
@@ -249,9 +293,6 @@ export async function getAnalisisUsadosPorCliente(
   return count ?? 0;
 }
 
-/**
- * Obtiene el historial de análisis de un cliente (últimos 10).
- */
 export async function getHistorialAnalisis(
   clienteId: string
 ): Promise<{ data: AnalisisRealizado[]; error: string | null }> {
@@ -268,6 +309,7 @@ export async function getHistorialAnalisis(
 
   return { data: (data as AnalisisRealizado[]) ?? [], error: null };
 }
+
 // ─── Matching con servicios reservables del portal ──────────────────────────
 
 import {
@@ -275,31 +317,21 @@ import {
   type ServicioReservable,
 } from './citasConstants';
 
-/**
- * Intenta matchear el nombre del tratamiento recomendado por la IA
- * con un servicio reservable del portal.
- *
- * Devuelve el ServicioReservable exacto si hay match, o null si no.
- */
 export function matchServicioReservable(
   nombreRecomendado: string
 ): ServicioReservable | null {
   const target = nombreRecomendado.trim().toLowerCase();
 
-  // 1. Match exacto (case-insensitive)
   const exacto = CITAS_SERVICIOS_RESERVABLES.find(
     (s) => s.toLowerCase() === target
   );
   if (exacto) return exacto;
 
-  // 2. Match por inclusión bidireccional
-  // (ej: "Radiofrecuencia facial" matchea con "Radiofrecuencia")
   const incluye = CITAS_SERVICIOS_RESERVABLES.find((s) => {
     const sLower = s.toLowerCase();
     return target.includes(sLower) || sLower.includes(target);
   });
   if (incluye) return incluye;
 
-  // 3. Sin match
   return null;
 }
