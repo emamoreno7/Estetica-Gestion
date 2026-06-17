@@ -1,7 +1,16 @@
 // src/features/portal/views/AnalizadorView.tsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Camera, History, Lock, ChevronRight, RotateCcw } from 'lucide-react';
+import {
+  Sparkles,
+  Camera,
+  History,
+  Lock,
+  ChevronRight,
+  RotateCcw,
+  AlertTriangle,
+  ImageOff,
+} from 'lucide-react';
 import { usePortalCliente } from '@/context/PortalClienteContext';
 import { SelectorZona } from '../components/SelectorZona';
 import { CapturaFoto } from '../components/CapturaFoto';
@@ -16,13 +25,14 @@ import {
   type ZonaCuerpo,
   type ResultadoAnalisisIA,
   type AnalisisRealizado,
+  type ErrorAnalisis,
 } from '@/lib/analizadorApi';
 import type { ServicioReservable } from '@/lib/citasConstants';
 import { useAuth } from '@/context/AuthContext';
 
 // ─── Tipos de paso del flujo ────────────────────────────────────────────────
 
-type Paso = 'intro' | 'zona' | 'foto' | 'analizando' | 'resultado' | 'limite';
+type Paso = 'intro' | 'zona' | 'foto' | 'analizando' | 'resultado' | 'rechazo' | 'limite';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -41,6 +51,7 @@ export function AnalizadorView({ onReservarServicio }: Props) {
   const [imagenCapturada, setImagenCapturada] = useState<File | null>(null);
   const [resultado, setResultado] = useState<ResultadoAnalisisIA | null>(null);
   const [errorMensaje, setErrorMensaje] = useState<string | null>(null);
+  const [errorRechazo, setErrorRechazo] = useState<ErrorAnalisis | null>(null);
   const [analisisUsados, setAnalisisUsados] = useState(0);
   const [historial, setHistorial] = useState<AnalisisRealizado[]>([]);
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
@@ -78,13 +89,29 @@ export function AnalizadorView({ onReservarServicio }: Props) {
 
     setImagenCapturada(foto);
     setErrorMensaje(null);
+    setErrorRechazo(null);
     setPaso('analizando');
 
     const { data, error } = await analizarZona(zonaSeleccionada, foto);
 
+    // ── Si hay error, decidir si es rechazo (validación) o error técnico ──
     if (error || !data) {
-      setErrorMensaje(error?.mensaje ?? 'Error desconocido. Intentá de nuevo.');
-      setPaso('foto');
+      const tiposRechazo: ErrorAnalisis['tipo'][] = [
+        'imagen_no_valida',
+        'imagen_baja_calidad',
+        'zona_no_coincide',
+      ];
+
+      if (error && tiposRechazo.includes(error.tipo)) {
+        // Rechazo "limpio" → mostrar pantalla específica
+        // NO se descuenta análisis, NO se guarda
+        setErrorRechazo(error);
+        setPaso('rechazo');
+      } else {
+        // Error técnico (red, desconocido) → volver al paso foto con mensaje
+        setErrorMensaje(error?.mensaje ?? 'Error desconocido. Intentá de nuevo.');
+        setPaso('foto');
+      }
       return;
     }
 
@@ -105,7 +132,25 @@ export function AnalizadorView({ onReservarServicio }: Props) {
     setImagenCapturada(null);
     setResultado(null);
     setErrorMensaje(null);
+    setErrorRechazo(null);
     setPaso('intro');
+  }
+
+  // ── Flujo: reintentar con otra foto desde el rechazo ──────────────────
+  function reintentarFoto() {
+    setErrorMensaje(null);
+    setErrorRechazo(null);
+    setImagenCapturada(null);
+    setPaso('foto');
+  }
+
+  // ── Flujo: cambiar de zona desde el rechazo ────────────────────────────
+  function cambiarZona() {
+    setErrorMensaje(null);
+    setErrorRechazo(null);
+    setImagenCapturada(null);
+    setZonaSeleccionada(null);
+    setPaso('zona');
   }
 
   // ── Flujo: reservar el servicio recomendado ────────────────────────────
@@ -432,7 +477,7 @@ export function AnalizadorView({ onReservarServicio }: Props) {
 
             <div className="mt-8 w-full max-w-xs space-y-2 text-left">
               {[
-                'Procesando imagen...',
+                'Validando imagen...',
                 'Detectando características de piel...',
                 'Consultando catálogo Amore...',
                 'Generando recomendación personalizada...',
@@ -479,6 +524,23 @@ export function AnalizadorView({ onReservarServicio }: Props) {
           </motion.div>
         )}
 
+        {paso === 'rechazo' && errorRechazo && (
+          <motion.div
+            key="rechazo"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <ImagenRechazada
+              error={errorRechazo}
+              zona={zonaSeleccionada}
+              onReintentar={reintentarFoto}
+              onCambiarZona={cambiarZona}
+              onVolverInicio={reiniciar}
+            />
+          </motion.div>
+        )}
+
         {paso === 'limite' && (
           <motion.div
             key="limite"
@@ -492,6 +554,171 @@ export function AnalizadorView({ onReservarServicio }: Props) {
 
       </AnimatePresence>
     </div>
+  );
+}
+
+// ─── Sub-componente: Imagen rechazada ────────────────────────────────────────
+
+function ImagenRechazada({
+  error,
+  zona,
+  onReintentar,
+  onCambiarZona,
+  onVolverInicio,
+}: {
+  error: ErrorAnalisis;
+  zona: ZonaCuerpo | null;
+  onReintentar: () => void;
+  onCambiarZona: () => void;
+  onVolverInicio: () => void;
+}) {
+  const { titulo, descripcion, sugerencias, icon: Icon, color } = getRechazoConfig(error.tipo);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="overflow-hidden rounded-3xl"
+      style={{
+        background: 'rgba(253,248,245,0.95)',
+        border: '1px solid var(--accent-rose)',
+        boxShadow: '0 16px 48px rgba(0,61,91,0.10)',
+      }}
+    >
+      {/* Banda superior con color */}
+      <div
+        className="h-2 w-full"
+        style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}
+      />
+
+      <div className="p-6 lg:p-8">
+        {/* Ícono */}
+        <div className="mb-5 flex justify-center">
+          <motion.div
+            initial={{ scale: 0, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200 }}
+            className="flex h-20 w-20 items-center justify-center rounded-2xl"
+            style={{
+              background: `${color}22`,
+              border: `1.5px solid ${color}55`,
+            }}
+          >
+            <Icon className="h-9 w-9" style={{ color }} />
+          </motion.div>
+        </div>
+
+        {/* Título */}
+        <h3
+          className="text-serif-premium mb-2 text-center text-xl font-bold lg:text-2xl"
+          style={{ color: 'var(--primary-navy)' }}
+        >
+          {titulo}
+        </h3>
+
+        {/* Mensaje del backend */}
+        <p
+          className="mx-auto mb-4 max-w-md text-center text-sm leading-relaxed"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {error.mensaje || descripcion}
+        </p>
+
+        {/* Aviso clave: no se descuenta análisis */}
+        <div
+          className="mx-auto mb-6 flex max-w-md items-start gap-2 rounded-2xl p-3"
+          style={{
+            background: 'rgba(191,201,162,0.18)',
+            border: '1px solid rgba(191,201,162,0.4)',
+          }}
+        >
+          <Sparkles
+            className="mt-0.5 h-4 w-4 flex-shrink-0"
+            style={{ color: '#4a5e2a' }}
+          />
+          <p className="text-xs leading-relaxed" style={{ color: '#4a5e2a' }}>
+            <strong>No descontamos este intento.</strong> Probá de nuevo cuando quieras,
+            tus análisis disponibles siguen intactos.
+          </p>
+        </div>
+
+        {/* Sugerencias */}
+        <div className="mx-auto mb-6 max-w-md">
+          <p
+            className="mb-3 text-xs font-bold uppercase tracking-wider"
+            style={{ color: 'var(--primary-navy)' }}
+          >
+            Consejos para una buena foto:
+          </p>
+          <ul className="space-y-2">
+            {sugerencias.map((s, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 + i * 0.08 }}
+                className="flex items-start gap-2 text-sm"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <span
+                  className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full"
+                  style={{ background: 'var(--primary-navy)' }}
+                />
+                <span>{s}</span>
+              </motion.li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Botones de acción */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <motion.button
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onReintentar}
+            className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #003D5B, #005580)',
+              boxShadow: '0 10px 28px rgba(0,61,91,0.22)',
+            }}
+          >
+            <Camera className="h-4 w-4" />
+            Sacar otra foto
+          </motion.button>
+
+          {error.tipo === 'zona_no_coincide' && zona && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onCambiarZona}
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold"
+              style={{
+                color: 'var(--primary-navy)',
+                border: '1.5px solid rgba(0,61,91,0.2)',
+                background: 'white',
+              }}
+            >
+              Cambiar zona
+            </motion.button>
+          )}
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onVolverInicio}
+            className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold"
+            style={{
+              color: 'var(--text-muted)',
+              border: '1.5px solid rgba(122,116,110,0.2)',
+              background: 'transparent',
+            }}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Volver al inicio
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -559,6 +786,71 @@ function LimiteAlcanzado({ onReiniciar }: { onReiniciar?: () => void }) {
       </div>
     </motion.div>
   );
+}
+
+// ─── Configuración visual del rechazo según tipo de error ────────────────────
+
+function getRechazoConfig(tipo: ErrorAnalisis['tipo']): {
+  titulo: string;
+  descripcion: string;
+  sugerencias: string[];
+  icon: typeof ImageOff;
+  color: string;
+} {
+  switch (tipo) {
+    case 'imagen_no_valida':
+      return {
+        titulo: 'No pudimos analizar la imagen',
+        descripcion:
+          'La foto no parece mostrar piel humana apta para análisis estético.',
+        sugerencias: [
+          'Asegurate de que la foto sea de la zona del cuerpo que querés consultar',
+          'Evitá enviar imágenes de objetos, paisajes, animales o capturas de pantalla',
+          'La zona debe estar bien visible y enfocada',
+        ],
+        icon: ImageOff,
+        color: '#B8956E',
+      };
+
+    case 'imagen_baja_calidad':
+      return {
+        titulo: 'La foto necesita mejor calidad',
+        descripcion: 'No pudimos analizar la imagen con la confianza suficiente.',
+        sugerencias: [
+          'Sacá la foto con buena luz natural (de día, cerca de una ventana)',
+          'Acercate más a la zona, que ocupe gran parte de la imagen',
+          'Mantené el celular firme para que no salga borrosa',
+          'Evitá sombras fuertes y reflejos',
+        ],
+        icon: AlertTriangle,
+        color: '#B8956E',
+      };
+
+    case 'zona_no_coincide':
+      return {
+        titulo: 'La zona no coincide con la foto',
+        descripcion:
+          'Detectamos una zona del cuerpo distinta a la que seleccionaste.',
+        sugerencias: [
+          'Verificá que la foto sea de la zona que elegiste',
+          'O cambiá la zona seleccionada para que coincida con la imagen',
+        ],
+        icon: AlertTriangle,
+        color: '#003D5B',
+      };
+
+    default:
+      return {
+        titulo: 'No pudimos completar el análisis',
+        descripcion: 'Ocurrió un inconveniente al procesar tu foto.',
+        sugerencias: [
+          'Intentá nuevamente con otra foto',
+          'Verificá tu conexión a internet',
+        ],
+        icon: AlertTriangle,
+        color: '#7A746E',
+      };
+  }
 }
 
 // ─── Helpers visuales ────────────────────────────────────────────────────────
