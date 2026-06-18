@@ -2,11 +2,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  BarChart3,       // ← agregar
+  BarChart3,
   Calculator,
   CalendarDays,
   HeartPulse,
   Home,
+  Inbox,
   LayoutDashboard,
   LogOut,
   ShieldAlert,
@@ -17,12 +18,14 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { countPerfilesPendientesAdmin } from './adminApi';
 import { countInsumosSinVerificar } from './adminAuditoriaApi';
+import { contarSolicitudesPendientes } from '@/lib/analizadorApi';
 
 const PENDING_REFRESH_MS = 60_000;
 const AUDIT_REFRESH_MS = 5 * 60_000;
+const SOLICITUDES_REFRESH_MS = 60_000;
 const AUDIT_DIAS_UMBRAL = 7;
 
-type BadgeKey = 'pending' | 'audit';
+type BadgeKey = 'pending' | 'audit' | 'solicitudes';
 
 type Item = {
   to: string;
@@ -41,7 +44,8 @@ const ITEMS: Item[] = [
   { to: '/admin/servicios', label: 'Servicios', icon: Sparkles },
   { to: '/admin/costos', label: 'Costos y precios', icon: Calculator },
   { to: '/admin/auditoria-precios', label: 'Auditoría precios', icon: ShieldAlert, badgeKey: 'audit' },
-  { to: '/admin/reportes', label: 'Reportes', icon: BarChart3 },  // ← nuevo
+  { to: '/admin/solicitudes-analisis', label: 'Solicitudes IA', icon: Inbox, badgeKey: 'solicitudes' },
+  { to: '/admin/reportes', label: 'Reportes', icon: BarChart3 },
 ];
 
 type Props = {
@@ -62,18 +66,21 @@ export function AdminShell({ children, onSignOut, title, subtitle, actions }: Pr
 
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [auditCount, setAuditCount] = useState<number | null>(null);
+  const [solicitudesCount, setSolicitudesCount] = useState<number | null>(null);
 
   /**
    * Polling silencioso de contadores para alimentar badges del sidebar.
    * Pausa cuando la pestaña no es visible; refresh inmediato al volver.
    * - Pendientes: cada 60s (cambia con cada alta nueva)
    * - Auditoría: cada 5min (cambia rara vez)
+   * - Solicitudes IA: cada 60s (puede llegar en cualquier momento)
    */
   useEffect(() => {
     if (!session?.user) return;
     let cancelled = false;
     let pendingTimer: ReturnType<typeof setInterval> | null = null;
     let auditTimer: ReturnType<typeof setInterval> | null = null;
+    let solicitudesTimer: ReturnType<typeof setInterval> | null = null;
 
     async function refreshPending() {
       const n = await countPerfilesPendientesAdmin();
@@ -83,9 +90,14 @@ export function AdminShell({ children, onSignOut, title, subtitle, actions }: Pr
       const n = await countInsumosSinVerificar(AUDIT_DIAS_UMBRAL);
       if (!cancelled) setAuditCount(n);
     }
+    async function refreshSolicitudes() {
+      const n = await contarSolicitudesPendientes();
+      if (!cancelled) setSolicitudesCount(n);
+    }
     function start() {
       if (pendingTimer === null) pendingTimer = setInterval(() => void refreshPending(), PENDING_REFRESH_MS);
       if (auditTimer === null) auditTimer = setInterval(() => void refreshAudit(), AUDIT_REFRESH_MS);
+      if (solicitudesTimer === null) solicitudesTimer = setInterval(() => void refreshSolicitudes(), SOLICITUDES_REFRESH_MS);
     }
     function stop() {
       if (pendingTimer !== null) {
@@ -96,16 +108,22 @@ export function AdminShell({ children, onSignOut, title, subtitle, actions }: Pr
         clearInterval(auditTimer);
         auditTimer = null;
       }
+      if (solicitudesTimer !== null) {
+        clearInterval(solicitudesTimer);
+        solicitudesTimer = null;
+      }
     }
 
     void refreshPending();
     void refreshAudit();
+    void refreshSolicitudes();
     if (document.visibilityState === 'visible') start();
 
     function onVisibility() {
       if (document.visibilityState === 'visible') {
         void refreshPending();
         void refreshAudit();
+        void refreshSolicitudes();
         start();
       } else {
         stop();
@@ -123,6 +141,7 @@ export function AdminShell({ children, onSignOut, title, subtitle, actions }: Pr
   function badgeFor(item: Item): number {
     if (item.badgeKey === 'pending' && typeof pendingCount === 'number') return pendingCount;
     if (item.badgeKey === 'audit' && typeof auditCount === 'number') return auditCount;
+    if (item.badgeKey === 'solicitudes' && typeof solicitudesCount === 'number') return solicitudesCount;
     return 0;
   }
 

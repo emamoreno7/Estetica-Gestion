@@ -10,6 +10,10 @@ import {
   RotateCcw,
   AlertTriangle,
   ImageOff,
+  Send,
+  Clock,
+  X,
+  CheckCircle2,
 } from 'lucide-react';
 import { usePortalCliente } from '@/context/PortalClienteContext';
 import { SelectorZona } from '../components/SelectorZona';
@@ -20,12 +24,16 @@ import {
   guardarAnalisis,
   getAnalisisUsadosPorCliente,
   getHistorialAnalisis,
-  puedeAnalizarRegistrado,
+  puedeAnalizarRegistradoConExtras,
+  getAnalisisExtraOtorgados,
+  getSolicitudPendienteCliente,
+  crearSolicitudAnalisisExtra,
   LIMITES_ANALISIS,
   type ZonaCuerpo,
   type ResultadoAnalisisIA,
   type AnalisisRealizado,
   type ErrorAnalisis,
+  type SolicitudAnalisisExtra,
 } from '@/lib/analizadorApi';
 import type { ServicioReservable } from '@/lib/citasConstants';
 import { useAuth } from '@/context/AuthContext';
@@ -53,15 +61,30 @@ export function AnalizadorView({ onReservarServicio }: Props) {
   const [errorMensaje, setErrorMensaje] = useState<string | null>(null);
   const [errorRechazo, setErrorRechazo] = useState<ErrorAnalisis | null>(null);
   const [analisisUsados, setAnalisisUsados] = useState(0);
+  const [analisisExtra, setAnalisisExtra] = useState(0);
+  const [solicitudPendiente, setSolicitudPendiente] = useState<SolicitudAnalisisExtra | null>(null);
   const [historial, setHistorial] = useState<AnalisisRealizado[]>([]);
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
 
-  // ── Cargar cantidad de análisis usados al montar ────────────────────────
+  // ── Cargar datos del usuario al montar ──────────────────────────────────
   useEffect(() => {
     if (!session?.user) return;
-    void getAnalisisUsadosPorCliente(session.user.id).then(setAnalisisUsados);
+    void cargarDatosUsuario();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user]);
+
+  async function cargarDatosUsuario() {
+    if (!session?.user) return;
+    const [usados, extras, { data: pendiente }] = await Promise.all([
+      getAnalisisUsadosPorCliente(session.user.id),
+      getAnalisisExtraOtorgados(session.user.id),
+      getSolicitudPendienteCliente(session.user.id),
+    ]);
+    setAnalisisUsados(usados);
+    setAnalisisExtra(extras);
+    setSolicitudPendiente(pendiente);
+  }
 
   // ── Cargar historial ────────────────────────────────────────────────────
   async function cargarHistorial() {
@@ -82,7 +105,7 @@ export function AnalizadorView({ onReservarServicio }: Props) {
   async function handleFotoCapturada(foto: File) {
     if (!zonaSeleccionada) return;
 
-    if (!puedeAnalizarRegistrado(analisisUsados)) {
+    if (!puedeAnalizarRegistradoConExtras(analisisUsados, analisisExtra)) {
       setPaso('limite');
       return;
     }
@@ -94,7 +117,6 @@ export function AnalizadorView({ onReservarServicio }: Props) {
 
     const { data, error } = await analizarZona(zonaSeleccionada, foto);
 
-    // ── Si hay error, decidir si es rechazo (validación) o error técnico ──
     if (error || !data) {
       const tiposRechazo: ErrorAnalisis['tipo'][] = [
         'imagen_no_valida',
@@ -103,12 +125,9 @@ export function AnalizadorView({ onReservarServicio }: Props) {
       ];
 
       if (error && tiposRechazo.includes(error.tipo)) {
-        // Rechazo "limpio" → mostrar pantalla específica
-        // NO se descuenta análisis, NO se guarda
         setErrorRechazo(error);
         setPaso('rechazo');
       } else {
-        // Error técnico (red, desconocido) → volver al paso foto con mensaje
         setErrorMensaje(error?.mensaje ?? 'Error desconocido. Intentá de nuevo.');
         setPaso('foto');
       }
@@ -136,7 +155,6 @@ export function AnalizadorView({ onReservarServicio }: Props) {
     setPaso('intro');
   }
 
-  // ── Flujo: reintentar con otra foto desde el rechazo ──────────────────
   function reintentarFoto() {
     setErrorMensaje(null);
     setErrorRechazo(null);
@@ -144,7 +162,6 @@ export function AnalizadorView({ onReservarServicio }: Props) {
     setPaso('foto');
   }
 
-  // ── Flujo: cambiar de zona desde el rechazo ────────────────────────────
   function cambiarZona() {
     setErrorMensaje(null);
     setErrorRechazo(null);
@@ -153,12 +170,13 @@ export function AnalizadorView({ onReservarServicio }: Props) {
     setPaso('zona');
   }
 
-  // ── Flujo: reservar el servicio recomendado ────────────────────────────
   function handleReservar(servicio: ServicioReservable) {
     onReservarServicio?.(servicio);
   }
 
-  const analisisRestantes = LIMITES_ANALISIS.registrado - analisisUsados;
+  // ── Calcular límite total y restantes (base + extras) ──────────────────
+  const limiteTotal = LIMITES_ANALISIS.registrado + analisisExtra;
+  const analisisRestantes = Math.max(0, limiteTotal - analisisUsados);
   const puedeAnalizar = analisisRestantes > 0;
 
   return (
@@ -220,6 +238,14 @@ export function AnalizadorView({ onReservarServicio }: Props) {
                   ? `${analisisRestantes} análisis disponible${analisisRestantes !== 1 ? 's' : ''}`
                   : 'Límite alcanzado'}
               </span>
+              {analisisExtra > 0 && (
+                <span
+                  className="ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                  style={{ background: 'rgba(255,255,255,0.18)' }}
+                >
+                  +{analisisExtra} extra
+                </span>
+              )}
             </div>
 
             {analisisUsados > 0 && (
@@ -393,7 +419,12 @@ export function AnalizadorView({ onReservarServicio }: Props) {
                 <ChevronRight className="h-5 w-5" />
               </motion.button>
             ) : (
-              <LimiteAlcanzado />
+              <LimiteAlcanzado
+                clienteId={session?.user?.id ?? null}
+                solicitudPendiente={solicitudPendiente}
+                onSolicitudCreada={(s) => setSolicitudPendiente(s)}
+                onReiniciar={reiniciar}
+              />
             )}
 
             <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -548,7 +579,12 @@ export function AnalizadorView({ onReservarServicio }: Props) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
           >
-            <LimiteAlcanzado onReiniciar={reiniciar} />
+            <LimiteAlcanzado
+              clienteId={session?.user?.id ?? null}
+              solicitudPendiente={solicitudPendiente}
+              onSolicitudCreada={(s) => setSolicitudPendiente(s)}
+              onReiniciar={reiniciar}
+            />
           </motion.div>
         )}
 
@@ -585,14 +621,12 @@ function ImagenRechazada({
         boxShadow: '0 16px 48px rgba(0,61,91,0.10)',
       }}
     >
-      {/* Banda superior con color */}
       <div
         className="h-2 w-full"
         style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}
       />
 
       <div className="p-6 lg:p-8">
-        {/* Ícono */}
         <div className="mb-5 flex justify-center">
           <motion.div
             initial={{ scale: 0, rotate: -10 }}
@@ -608,7 +642,6 @@ function ImagenRechazada({
           </motion.div>
         </div>
 
-        {/* Título */}
         <h3
           className="text-serif-premium mb-2 text-center text-xl font-bold lg:text-2xl"
           style={{ color: 'var(--primary-navy)' }}
@@ -616,7 +649,6 @@ function ImagenRechazada({
           {titulo}
         </h3>
 
-        {/* Mensaje del backend */}
         <p
           className="mx-auto mb-4 max-w-md text-center text-sm leading-relaxed"
           style={{ color: 'var(--text-muted)' }}
@@ -624,7 +656,6 @@ function ImagenRechazada({
           {error.mensaje || descripcion}
         </p>
 
-        {/* Aviso clave: no se descuenta análisis */}
         <div
           className="mx-auto mb-6 flex max-w-md items-start gap-2 rounded-2xl p-3"
           style={{
@@ -642,7 +673,6 @@ function ImagenRechazada({
           </p>
         </div>
 
-        {/* Sugerencias */}
         <div className="mx-auto mb-6 max-w-md">
           <p
             className="mb-3 text-xs font-bold uppercase tracking-wider"
@@ -670,7 +700,6 @@ function ImagenRechazada({
           </ul>
         </div>
 
-        {/* Botones de acción */}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <motion.button
             whileHover={{ scale: 1.02, y: -1 }}
@@ -722,57 +751,205 @@ function ImagenRechazada({
   );
 }
 
-// ─── Sub-componente: Límite alcanzado ────────────────────────────────────────
+// ─── Sub-componente: Límite alcanzado (con solicitud al admin) ──────────────
 
-function LimiteAlcanzado({ onReiniciar }: { onReiniciar?: () => void }) {
+function LimiteAlcanzado({
+  clienteId,
+  solicitudPendiente,
+  onSolicitudCreada,
+  onReiniciar,
+}: {
+  clienteId: string | null;
+  solicitudPendiente: SolicitudAnalisisExtra | null;
+  onSolicitudCreada: (s: SolicitudAnalisisExtra) => void;
+  onReiniciar?: () => void;
+}) {
+  const [modalAbierto, setModalAbierto] = useState(false);
+
+  // Si ya tiene solicitud pendiente, mostrar estado de espera
+  if (solicitudPendiente) {
+    return (
+      <SolicitudPendienteCard
+        solicitud={solicitudPendiente}
+        onReiniciar={onReiniciar}
+      />
+    );
+  }
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-3xl p-8 text-center"
+        style={{
+          background: 'rgba(253,248,245,0.92)',
+          border: '1px solid var(--accent-rose)',
+          boxShadow: '0 12px 40px rgba(0,61,91,0.08)',
+        }}
+      >
+        <div
+          className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+          style={{ background: 'rgba(242,215,213,0.4)' }}
+        >
+          <Lock className="h-7 w-7" style={{ color: 'var(--primary-navy)' }} />
+        </div>
+        <h3
+          className="text-serif-premium mb-2 text-xl font-bold"
+          style={{ color: 'var(--primary-navy)' }}
+        >
+          Usaste todos tus análisis disponibles
+        </h3>
+        <p
+          className="mx-auto mb-6 max-w-sm text-sm leading-relaxed"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Podés solicitar análisis adicionales a nuestro equipo y te los desbloqueamos
+          en el momento, o consultarnos directamente por WhatsApp.
+        </p>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          {clienteId && (
+            <motion.button
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setModalAbierto(true)}
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-lg"
+              style={{
+                background: 'linear-gradient(135deg, #003D5B, #005580)',
+                boxShadow: '0 10px 28px rgba(0,61,91,0.22)',
+              }}
+            >
+              <Send className="h-4 w-4" />
+              Pedir más análisis
+            </motion.button>
+          )}
+
+          <motion.a
+            href="https://wa.me/5491100000000?text=Hola%20Amore!%20Quiero%20agendar%20una%20consulta%20de%20piel"
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white"
+            style={{ background: '#25D366', boxShadow: '0 8px 24px rgba(37,211,102,0.25)' }}
+          >
+            💬 WhatsApp
+          </motion.a>
+
+          {onReiniciar && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onReiniciar}
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold"
+              style={{
+                color: 'var(--primary-navy)',
+                border: '1px solid rgba(0,61,91,0.2)',
+                background: 'white',
+              }}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Volver
+            </motion.button>
+          )}
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {modalAbierto && clienteId && (
+          <ModalSolicitarAnalisis
+            clienteId={clienteId}
+            onClose={() => setModalAbierto(false)}
+            onCreada={(s) => {
+              onSolicitudCreada(s);
+              setModalAbierto(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// ─── Sub-componente: Card de solicitud pendiente ────────────────────────────
+
+function SolicitudPendienteCard({
+  solicitud,
+  onReiniciar,
+}: {
+  solicitud: SolicitudAnalisisExtra;
+  onReiniciar?: () => void;
+}) {
+  const fecha = new Date(solicitud.created_at).toLocaleDateString('es-AR', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl p-8 text-center"
+      className="overflow-hidden rounded-3xl"
       style={{
-        background: 'rgba(253,248,245,0.92)',
+        background: 'rgba(253,248,245,0.95)',
         border: '1px solid var(--accent-rose)',
-        boxShadow: '0 12px 40px rgba(0,61,91,0.08)',
+        boxShadow: '0 16px 48px rgba(0,61,91,0.10)',
       }}
     >
-      <div
-        className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-        style={{ background: 'rgba(242,215,213,0.4)' }}
-      >
-        <Lock className="h-7 w-7" style={{ color: 'var(--primary-navy)' }} />
-      </div>
-      <h3
-        className="text-serif-premium mb-2 text-xl font-bold"
-        style={{ color: 'var(--primary-navy)' }}
-      >
-        Usaste tus {LIMITES_ANALISIS.registrado} análisis gratuitos
-      </h3>
-      <p
-        className="mx-auto mb-6 max-w-sm text-sm leading-relaxed"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        Para recibir un análisis personalizado más profundo y una consulta con nuestras
-        especialistas, visitanos en sede o escribinos por WhatsApp.
-      </p>
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <motion.a
-          href="https://wa.me/5491100000000?text=Hola%20Amore!%20Quiero%20agendar%20una%20consulta%20de%20piel"
-          target="_blank"
-          rel="noopener noreferrer"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white"
-          style={{ background: '#25D366', boxShadow: '0 8px 24px rgba(37,211,102,0.25)' }}
+      <div className="h-2 w-full bg-gradient-to-r from-[#B8956E] to-[#D4B896]" />
+
+      <div className="p-6 lg:p-8 text-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 200 }}
+          className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+          style={{ background: 'rgba(184,149,110,0.2)', border: '1.5px solid rgba(184,149,110,0.4)' }}
         >
-          💬 Consulta por WhatsApp
-        </motion.a>
+          <Clock className="h-7 w-7" style={{ color: '#B8956E' }} />
+        </motion.div>
+
+        <h3
+          className="text-serif-premium mb-2 text-xl font-bold"
+          style={{ color: 'var(--primary-navy)' }}
+        >
+          Tu solicitud está en revisión
+        </h3>
+        <p
+          className="mx-auto mb-4 max-w-sm text-sm leading-relaxed"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Nuestro equipo revisará tu pedido a la brevedad. Cuando se apruebe vas a recibir
+          una notificación y se desbloquearán automáticamente.
+        </p>
+
+        {solicitud.mensaje && (
+          <div
+            className="mx-auto mb-4 max-w-md rounded-2xl p-3 text-left"
+            style={{ background: 'rgba(0,61,91,0.04)', border: '1px solid rgba(0,61,91,0.08)' }}
+          >
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--primary-navy)' }}>
+              Tu mensaje:
+            </p>
+            <p className="text-xs leading-relaxed italic" style={{ color: 'var(--text-muted)' }}>
+              "{solicitud.mensaje}"
+            </p>
+          </div>
+        )}
+
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          Solicitado el <strong>{fecha}</strong>
+        </p>
+
         {onReiniciar && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onReiniciar}
-            className="flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold"
             style={{
               color: 'var(--primary-navy)',
               border: '1px solid rgba(0,61,91,0.2)',
@@ -784,6 +961,187 @@ function LimiteAlcanzado({ onReiniciar }: { onReiniciar?: () => void }) {
           </motion.button>
         )}
       </div>
+    </motion.div>
+  );
+}
+
+// ─── Modal: Solicitar más análisis ──────────────────────────────────────────
+
+function ModalSolicitarAnalisis({
+  clienteId,
+  onClose,
+  onCreada,
+}: {
+  clienteId: string;
+  onClose: () => void;
+  onCreada: (s: SolicitudAnalisisExtra) => void;
+}) {
+  const [mensaje, setMensaje] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [exito, setExito] = useState(false);
+
+  async function handleEnviar() {
+    setEnviando(true);
+    setError(null);
+
+    const { data, error: err } = await crearSolicitudAnalisisExtra(clienteId, mensaje);
+
+    if (err || !data) {
+      setError(err ?? 'No se pudo crear la solicitud. Intentá de nuevo.');
+      setEnviando(false);
+      return;
+    }
+
+    setExito(true);
+    setTimeout(() => {
+      onCreada(data);
+    }, 1200);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+    >
+      <motion.div
+        initial={{ y: 24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 24, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+        style={{ boxShadow: '0 24px 64px rgba(0,61,91,0.25)' }}
+      >
+        {/* Header */}
+        <div
+          className="relative p-6 text-white"
+          style={{ background: 'linear-gradient(135deg, #003D5B, #005580)' }}
+        >
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15">
+              <Send className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-serif-premium text-lg font-bold">Pedir más análisis</h3>
+              <p className="text-xs opacity-90">Te respondemos en el día</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6">
+          {exito ? (
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="py-6 text-center"
+            >
+              <div
+                className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl"
+                style={{ background: 'rgba(191,201,162,0.3)' }}
+              >
+                <CheckCircle2 className="h-7 w-7" style={{ color: '#4a5e2a' }} />
+              </div>
+              <h4
+                className="text-serif-premium mb-1 text-lg font-bold"
+                style={{ color: 'var(--primary-navy)' }}
+              >
+                ¡Solicitud enviada!
+              </h4>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Te avisamos apenas el admin la apruebe.
+              </p>
+            </motion.div>
+          ) : (
+            <>
+              <p
+                className="mb-4 text-sm leading-relaxed"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Contanos brevemente por qué necesitás más análisis (opcional). Esto nos
+                ayuda a responderte más rápido.
+              </p>
+
+              <label
+                className="mb-2 block text-xs font-bold uppercase tracking-wider"
+                style={{ color: 'var(--primary-navy)' }}
+              >
+                Tu mensaje (opcional)
+              </label>
+              <textarea
+                value={mensaje}
+                onChange={(e) => setMensaje(e.target.value)}
+                maxLength={300}
+                rows={4}
+                placeholder="Ej: Quiero analizar mi cuello y mis brazos también..."
+                className="w-full resize-none rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2"
+                style={{
+                  borderColor: 'rgba(0,61,91,0.15)',
+                  background: 'rgba(253,248,245,0.5)',
+                }}
+              />
+              <p
+                className="mt-1 text-right text-[10px]"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {mensaje.length}/300
+              </p>
+
+              {error && (
+                <div
+                  className="mt-3 flex items-start gap-2 rounded-2xl p-3"
+                  style={{
+                    background: 'rgba(242,215,213,0.4)',
+                    border: '1px solid rgba(139,58,58,0.3)',
+                  }}
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: '#8B3A3A' }} />
+                  <p className="text-xs leading-relaxed" style={{ color: '#8B3A3A' }}>
+                    {error}
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-5 flex gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={onClose}
+                  disabled={enviando}
+                  className="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold disabled:opacity-50"
+                  style={{
+                    color: 'var(--primary-navy)',
+                    border: '1px solid rgba(0,61,91,0.2)',
+                    background: 'white',
+                  }}
+                >
+                  Cancelar
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleEnviar}
+                  disabled={enviando}
+                  className="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-60"
+                  style={{
+                    background: 'linear-gradient(135deg, #003D5B, #005580)',
+                    boxShadow: '0 10px 28px rgba(0,61,91,0.22)',
+                  }}
+                >
+                  {enviando ? 'Enviando...' : 'Enviar solicitud'}
+                </motion.button>
+              </div>
+            </>
+          )}
+        </div>
+      </motion.div>
     </motion.div>
   );
 }

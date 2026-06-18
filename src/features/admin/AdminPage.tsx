@@ -10,6 +10,7 @@ import AprobarUsuariosPage from '@/features/admin/AprobarUsuariosPage';
 import { useAuth } from '@/context/AuthContext';
 import { isPortalAdmin } from '@/config/admin';
 import AdminReportesView from '@/features/admin/AdminReportesView';
+import AdminSolicitudesAnalisisView from '@/features/admin/AdminSolicitudesAnalisisView';
 
 function AdminOutletLayout({ onSignOut }: { onSignOut: () => void }) {
   return <Outlet context={{ onSignOut }} />;
@@ -74,6 +75,7 @@ export default function AdminPage() {
         <Route path="servicios" element={<AdminServicesView />} />
         <Route path="costos" element={<AdminCostosView />} />
         <Route path="auditoria-precios" element={<AdminAuditoriaPreciosView />} />
+        <Route path="solicitudes-analisis" element={<AdminSolicitudesAnalisisView />} />
         <Route path="reportes" element={<AdminReportesView />} />
       </Route>
     </Routes>
