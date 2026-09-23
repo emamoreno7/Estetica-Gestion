@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/optimize-editorial-images.py'
       - 'public/*.png'
+      - 'public/casos/*.jpg'
       - '.github/workflows/amore-optimize-images.yml'
   workflow_dispatch: {}
 
@@ -32,7 +33,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/editorial/
+          git add public/editorial/ public/casos/*.webp
           if ! git diff --cached --quiet; then
             git commit -m 'assets: optimizar imágenes editoriales WebP'
             git push origin HEAD:redesign/amore-premium
