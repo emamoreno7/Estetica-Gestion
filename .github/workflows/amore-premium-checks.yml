@@ -1,0 +1,27 @@
+name: Amore Premium PR checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [redesign/amore-premium]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Vite production build
+        run: npm run build
+      - name: GitHub Pages build
+        run: npm run build:pages

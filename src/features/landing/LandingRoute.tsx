@@ -8,7 +8,7 @@ export function LandingRoute() {
   const { session } = useAuth();
   const goAccount = () => {
     if (session) navigate('/portal');
-    else navigate('/acceso');
+    else navigate('/ingreso');
   };
   return <LandingPage onEnter={goAccount} onRegister={() => navigate('/unete')} />;
 }

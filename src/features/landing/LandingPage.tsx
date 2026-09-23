@@ -1,4 +1,6 @@
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Heart, Leaf, ShieldCheck, Sparkles } from 'lucide-react';
 import VirtualAssistantChat from '@/components/VirtualAssistantChat';
 import { WhatsAppFloatingButton } from '@/components/WhatsAppFloatingButton';
 import { buildWhatsAppHref } from '@/lib/whatsapp';
@@ -7,161 +9,115 @@ import { LandingHeader } from './LandingHeader';
 import { ServiciosSection } from './ServiciosSection';
 import { ConversionSection } from './ConversionSection';
 import { LandingFooter } from './LandingFooter';
-import { HeroCinematicBg } from './HeroCinematicBg';
 import { AntesYDespuesSection } from './AntesYDespuesSection';
+import { ExperienciaAmore } from './ExperienciaAmore';
+import { AmoreLink } from './AmoreLink';
+import './amore-premium.css';
 
 type Props = {
   onEnter: () => void;
   onRegister: () => void;
 };
 
+const VALUES = [
+  { icon: Leaf, label: 'Cuidado' },
+  { icon: Heart, label: 'Bienestar' },
+  { icon: ShieldCheck, label: 'Confianza' },
+  { icon: Sparkles, label: 'Innovación' },
+] as const;
+
 export function LandingPage({ onEnter, onRegister }: Props) {
+  const reduceMotion = useReducedMotion();
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [showDesktopAssistant, setShowDesktopAssistant] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      const desktop = window.innerWidth > 760;
+      setShowDesktopAssistant(desktop);
+      setShowFloatingContact(desktop || window.scrollY > 580);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
   return (
-    <div className="overflow-hidden text-[#003D5B]" style={{ background: 'var(--bg-cream)' }}>
+    <div className="amore-landing">
+      <a className="amore-skip-link" href="#contenido">Saltar al contenido</a>
       <LandingHeader onEnter={onEnter} />
 
-      <section
-        className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center"
-        style={{ paddingTop: '6rem', paddingBottom: '5rem', isolation: 'isolate' }}
-      >
-        <HeroCinematicBg />
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.88 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 mb-7 sm:mb-10"
-        >
-          <div
-            className="hero-logo-ring"
-            style={{
-              borderRadius: '50%',
-              padding: '12px',
-              background: 'radial-gradient(circle at 30% 30%, #ffffff 0%, #fdf8f5 55%, #f5e6da 100%)',
-              boxShadow:
-                '0 0 35px rgba(255,255,255,0.55), 0 0 70px rgba(252,228,212,0.30), 0 0 120px rgba(242,215,213,0.18)',
-              filter: 'contrast(1.08) brightness(1.02)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+      <main id="contenido">
+        <section id="inicio" className="amore-hero" aria-labelledby="amore-hero-title">
+          <div className="amore-hero__visual" aria-hidden="true">
             <img
-              src={asset('logo-amore-v2.png')}
-              alt="AMORE Centro Di Bellezza"
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                objectPosition: 'center',
-                display: 'block',
-                border: 'none',
-                boxShadow: 'none',
-                background: 'transparent',
-              }}
+              src={asset('amore-hero.webp')}
+              width="960"
+              height="540"
+              alt=""
+              fetchPriority="high"
+              decoding="async"
             />
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="relative z-10 mb-6 flex items-center justify-center gap-3"
-        >
-          <div className="h-px w-16 sm:w-20" style={{ background: 'var(--accent-rose)' }} />
-          <div className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--accent-rose)' }} />
-          <div className="h-px w-16 sm:w-20" style={{ background: 'var(--accent-rose)' }} />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 mx-auto max-w-2xl"
-        >
-          <h1
-            className="text-serif-premium font-light leading-tight"
-            style={{ color: 'var(--primary-navy)', fontSize: 'clamp(2rem, 5.4vw, 4rem)', letterSpacing: '0.03em' }}
-          >
-            Tu bienestar,
-            <br />
-            <em
-              className="font-normal not-italic"
-              style={{ color: 'rgba(0,61,91,0.60)', letterSpacing: '0.05em' }}
+          <div className="amore-hero__overlay" aria-hidden="true" />
+          <div className="amore-container amore-hero__inner">
+            <motion.div
+              className="amore-hero__copy"
+              initial={reduceMotion ? false : { opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             >
-              nuestro arte.
-            </em>
-          </h1>
-          <p
-            className="mx-auto mt-5 max-w-lg text-sm leading-7 sm:text-base sm:leading-8"
-            style={{ color: 'var(--text-muted)', letterSpacing: '0.02em' }}
-          >
-            Cada tratamiento en Amore está diseñado para acompañarte con calma, profesionalismo y resultados visibles.
-            Tu piel, en las mejores manos.
-          </p>
-        </motion.div>
+              <p className="amore-eyebrow">Belleza · Bienestar · Confianza</p>
+              <h1 id="amore-hero-title">Tu bienestar,<br /><em>elevado a arte.</em></h1>
+              <p className="amore-hero__description">
+                Tratamientos estéticos y atención personalizada para realzar tu belleza natural.
+                Un momento de calma, cuidado y bienestar, pensado para vos.
+              </p>
+              <div className="amore-hero__buttons">
+                <AmoreLink href={buildWhatsAppHref('reservar una cita')} external>
+                  Reservar mi cita
+                </AmoreLink>
+                <AmoreLink href="#tratamientos" variant="outline">
+                  Ver tratamientos
+                </AmoreLink>
+              </div>
+              <ul className="amore-hero__values" aria-label="Nuestros valores">
+                {VALUES.map(({ icon: Icon, label }) => (
+                  <li key={label}><Icon size={21} strokeWidth={1.4} aria-hidden="true" /><span>{label}</span></li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
+        </section>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.7 }}
-          className="relative z-10 mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
-        >
-          <motion.button
-            onClick={onEnter}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            className="rounded-full px-7 py-3 text-[11px] font-semibold uppercase tracking-[0.26em] text-white transition-all sm:px-8 sm:py-3.5"
-            style={{ background: 'var(--primary-navy)', boxShadow: '0 10px 30px rgba(0,61,91,0.18)' }}
-          >
-            Ver mi progreso
-          </motion.button>
-          <motion.button
-            onClick={onRegister}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            className="rounded-full px-7 py-3 text-[11px] font-semibold uppercase tracking-[0.26em] transition-all sm:px-8 sm:py-3.5"
-            style={{
-              background: 'var(--accent-rose)',
-              color: 'var(--primary-navy)',
-              boxShadow: '0 10px 30px rgba(242,215,213,0.50)',
-            }}
-          >
-            Crear mi perfil
-          </motion.button>
-        </motion.div>
+        <ExperienciaAmore />
+        <div id="tratamientos" className="amore-anchor"><ServiciosSection /></div>
+        <div id="resultados" className="amore-anchor"><AntesYDespuesSection /></div>
+        <div id="espacio" className="amore-anchor">
+          <ConversionSection onRegister={onRegister} />
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4, duration: 0.6 }}
-          className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2"
-        >
-          <span
-            className="text-[9px] font-semibold uppercase tracking-[0.3em]"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Descubrí más
-          </span>
-          <motion.div
-            animate={{ y: [0, 5, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            className="h-4 w-px rounded-full"
-            style={{ background: 'var(--accent-rose)' }}
-          />
-        </motion.div>
-      </section>
+        <section id="contacto" className="amore-closing" aria-labelledby="amore-closing-title">
+          <div className="amore-container amore-closing__inner">
+            <div>
+              <p className="amore-eyebrow">Tu momento Amore</p>
+              <h2 id="amore-closing-title">¿Lista para dedicarte <em>tiempo?</em></h2>
+              <p>Escribinos para conocer los tratamientos y encontrar el momento ideal para vos.</p>
+            </div>
+            <AmoreLink href={buildWhatsAppHref('reservar una cita')} external>
+              Escribinos por WhatsApp
+            </AmoreLink>
+          </div>
+        </section>
+      </main>
 
-      <ServiciosSection />
-
-      <AntesYDespuesSection />
-
-      <ConversionSection onRegister={onRegister} />
       <LandingFooter />
-      <VirtualAssistantChat whatsappHref={buildWhatsAppHref} />
-      <WhatsAppFloatingButton />
+      {showDesktopAssistant && <VirtualAssistantChat whatsappHref={buildWhatsAppHref} />}
+      {showFloatingContact && <WhatsAppFloatingButton />}
     </div>
   );
 }

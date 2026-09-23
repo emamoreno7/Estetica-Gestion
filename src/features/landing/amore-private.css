@@ -1,0 +1,43 @@
+/* Espacio personal Amore: mockup ilustrativo sin datos de clientas */
+.amore-landing .amore-private {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(112deg,#f8f0ed 0%,#fdf8f5 55%,#eaf0ec 100%) !important;
+  padding: clamp(5rem,8vw,8rem) 0 !important;
+}
+.amore-private__layout { display:grid; grid-template-columns:1.05fr .95fr; align-items:center; gap:clamp(2rem,6vw,7rem); }
+.amore-private__copy { max-width:590px; }
+.amore-private__copy h2 { font-size:clamp(2.8rem,4.7vw,5rem); margin:1rem 0 1.4rem; line-height:1.08; }
+.amore-private__copy h2 em { color:#748d80; }
+.amore-private__description { color:#64737b; max-width:470px; font-size:.92rem; line-height:1.95; }
+.amore-private__features { list-style:none; display:flex; flex-direction:column; gap:1rem; padding:0; margin:2rem 0 2.4rem; }
+.amore-private__features li { display:flex; align-items:center; gap:.85rem; color:#37515a; font-size:.84rem; font-weight:500; }
+.amore-private__features li span { display:grid; place-items:center; height:39px; width:39px; border-radius:50%; color:#6c8879; background:#fff; box-shadow:0 4px 15px rgba(16,58,77,.05); }
+.amore-landing .amore-private__cta { display:inline-flex; align-items:center; justify-content:center; gap:1.1rem; border:1px solid #103a4d; background:#103a4d; border-radius:100px !important; padding:1rem 1.65rem; color:white; font:600 .78rem/1 'Montserrat',sans-serif; box-shadow:0 8px 25px rgba(16,58,77,.13) !important; }
+.amore-landing .amore-private__cta:hover { background:#20536b; color:white; }
+.amore-landing .amore-private__cta:focus-visible { outline:2px solid #ab888b; outline-offset:4px; }
+.amore-private__visual { position:relative; min-height:570px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.amore-private__halo { position:absolute; inset:13% 3% 5%; border-radius:50%; background:radial-gradient(ellipse,rgba(255,255,255,.88) 0%,rgba(220,234,225,.37) 47%,transparent 69%); filter:blur(15px); }
+.amore-private__phone { position:relative; width:260px; min-height:522px; padding:24px 15px 15px; border:7px solid #243946; outline:3px solid #b2b9b6; border-radius:36px; background:#fffdfb; box-shadow:24px 38px 64px rgba(16,58,77,.19),inset 0 0 0 1px #dae3e2; transform:rotate(5deg); }
+.amore-private__phone-speaker { position:absolute; top:9px; left:50%; width:65px; height:8px; background:#203642; border-radius:100px; transform:translateX(-50%); }
+.amore-private__phone-header { display:flex; align-items:center; gap:.55rem; padding:.4rem .35rem .85rem; border-bottom:1px solid #efeee7; }
+.amore-private__phone-header img { width:45px; height:45px; object-fit:cover; border-radius:50%; }
+.amore-private__phone-header p { font-size:.73rem; font-weight:600; color:#103a4d; letter-spacing:.15em; }
+.amore-private__phone-header span { font-size:.53rem; color:#86958c; letter-spacing:.04em; }
+.amore-private__phone-greeting { display:flex; flex-direction:column; gap:.35rem; margin:1rem .3rem; }
+.amore-private__phone-greeting span,.amore-private__phone-progress span { color:#79938b; font-weight:600; font-size:.53rem; letter-spacing:.22em; }
+.amore-private__phone-greeting strong { color:#123b4d; font:400 1.25rem/1.2 'Fraunces',Georgia,serif; }
+.amore-private__phone-card { display:flex; align-items:center; gap:.65rem; padding:.85rem .55rem; margin-bottom:.5rem; border:1px solid #f0e9e3; border-radius:13px; background:#fff; }
+.amore-private__phone-card-icon { display:grid; place-items:center; width:34px; height:34px; color:#6f9082; border-radius:10px; background:#f1f5f0; }
+.amore-private__phone-card div { flex:1; display:flex; flex-direction:column; gap:.2rem; }
+.amore-private__phone-card strong { color:#193f50; font-size:.62rem; }
+.amore-private__phone-card small { color:#85928f; font-size:.49rem; }
+.amore-private__phone-card > svg { color:#8c9a94; }
+.amore-private__phone-progress { margin-top:.8rem; padding:.9rem; border-radius:13px; background:#f6f8f5; }
+.amore-private__phone-progress svg { display:block; width:100%; margin:.4rem 0 .25rem; }
+.amore-private__phone-progress p { font-size:.55rem; color:#83938b; }
+.amore-private__phone-bottom { display:flex; justify-content:space-between; border-top:1px solid #f0ece7; margin-top:1rem; padding:.9rem .5rem 0; color:#698177; font-size:.49rem; }
+.amore-private__visual-caption { position:relative; margin-top:2rem; color:#88918d; font-size:.68rem; text-align:center; }
+@media(max-width:850px) { .amore-private__layout { grid-template-columns:1fr; } .amore-private__copy { max-width:100%; } .amore-private__visual { min-height:560px; } }
+@media(max-width:420px) { .amore-private__phone { transform:rotate(2deg); } .amore-private__visual { min-height:545px; } }
+@media(prefers-reduced-motion:reduce) { .amore-private__phone { transform:none; } }

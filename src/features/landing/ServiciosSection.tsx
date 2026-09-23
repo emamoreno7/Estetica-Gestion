@@ -1,229 +1,238 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { useServiciosCatalogo } from '@/hooks/useServiciosCatalogo';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight, Hand, MessageCircle } from 'lucide-react';
 import { BADGE_STYLE, serviciosCatalogo } from '@/data/serviciosCatalogo';
+import { useServiciosCatalogo } from '@/hooks/useServiciosCatalogo';
 import { buildWhatsAppHref } from '@/lib/whatsapp';
-import { ServiceIllustration, type IllustrationKey } from './ServiceIllustration';
+import { asset } from '@/lib/asset';
+import './amore-services.css';
 
-const NAME_TO_ILLUSTRATION: Record<string, IllustrationKey> = {
-  'Body Up': 'bodyUp',
-  Radiofrecuencia: 'radiofrecuencia',
-  'Crio-lipólisis': 'crio',
-  'Lipo-láser': 'lipolaser',
-  Electrodos: 'electrodos',
-  'Masajes relajantes': 'masajeRelajante',
-  'Masajes descontracturantes': 'masajeDescontracturante',
-  'Masaje linfático': 'masajeLinfatico',
-  Presoterapia: 'presoterapia',
-  'Piedras calientes': 'piedrasCalientes',
-  'Lifting de pestañas': 'liftingPestanas',
-  'Laminado de pestañas': 'laminadoPestanas',
-  'Perfilado de cejas': 'perfiladoCejas',
-  'Depilación definitiva': 'depilacionDefinitiva',
-  'Eliminación de tatuajes': 'eliminacionTatuajes',
+const EDITORIAL_CATEGORIES = [
+  {
+    id: 'corporal',
+    eyebrow: 'CORPORAL',
+    title: 'Remodelación corporal',
+    image: 'editorial/body-up.webp',
+    fallback: 'body-up.png',
+  },
+  {
+    id: 'facial',
+    eyebrow: 'FACIAL & MIRADA',
+    title: 'El arte de cuidar tu piel',
+    image: 'editorial/pestanas.webp',
+    fallback: 'pestanas.png',
+  },
+  {
+    id: 'bienestar',
+    eyebrow: 'BIENESTAR',
+    title: 'Tu momento de calma',
+    image: 'editorial/masajesr.webp',
+    fallback: 'masajesr.png',
+  },
+  {
+    id: 'especialidades',
+    eyebrow: 'TECNOLOGÍA',
+    title: 'Cuidados especializados',
+    image: 'editorial/depilacion.webp',
+    fallback: 'depilacion.png',
+  },
+] as const;
+
+function editorialSrc(original: string) {
+  if (!original || /^(https?:|blob:|data:)/i.test(original)) return original;
+  const match = original.match(/^\/?([a-z0-9-]+)\.(?:png|jpe?g)$/i);
+  return match ? asset('editorial/' + match[1].toLowerCase() + '.webp') : asset(original);
+}
+
+type PhotoProps = {
+  src: string;
+  fallback: string;
+  alt: string;
+  className?: string;
+  priority?: boolean;
 };
 
-function resolveIllustration(srv: { illustration?: IllustrationKey; name: string }): IllustrationKey {
-  return srv.illustration ?? NAME_TO_ILLUSTRATION[srv.name] ?? 'bodyUp';
+function EditorialPhoto({ src, fallback, alt, className = '', priority = false }: PhotoProps) {
+  return (
+    <img
+      className={className}
+      src={asset(src)}
+      alt={alt}
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+      width="760"
+      height="920"
+      onError={(event) => {
+        const img = event.currentTarget;
+        const backup = asset(fallback);
+        if (img.src !== new URL(backup, window.location.href).href) img.src = backup;
+      }}
+    />
+  );
 }
 
 export function ServiciosSection() {
-  const { categorias, loading, error, fromDb } = useServiciosCatalogo();
+  const { categorias, loading, error } = useServiciosCatalogo();
   const [activeTab, setActiveTab] = useState(serviciosCatalogo[0].id);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (categorias.length > 0 && !categorias.some((c) => c.id === activeTab)) {
+    if (categorias.length > 0 && !categorias.some((category) => category.id === activeTab)) {
       setActiveTab(categorias[0].id);
     }
   }, [categorias, activeTab]);
 
-  const categoria = categorias.find((c) => c.id === activeTab) ?? categorias[0];
+  const categoria = categorias.find((category) => category.id === activeTab) ?? categorias[0];
+  if (!categoria) return null;
 
-  if (!categoria) {
-    return null;
+  function chooseCategory(id: string) {
+    setActiveTab(id);
+    window.requestAnimationFrame(() => {
+      document.getElementById('amore-catalogo')?.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
   }
 
   return (
-    <section className="relative px-4 py-24 sm:px-10 lg:py-32" style={{ background: 'var(--bg-cream)' }}>
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -right-40 top-20 h-[500px] w-[500px] rounded-full blur-3xl"
-          style={{ background: 'rgba(191,201,162,0.18)' }}
-        />
-        <div
-          className="absolute -left-32 bottom-20 h-[400px] w-[400px] rounded-full blur-3xl"
-          style={{ background: 'rgba(242,215,213,0.22)' }}
-        />
-      </div>
-
-      <div className="relative mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.7 }}
-          className="mb-12 text-center"
-        >
-          <p
-            className="mb-3 text-[10px] font-semibold uppercase tracking-[0.38em]"
-            style={{ color: 'var(--accent-sage)' }}
-          >
-            Catálogo Completo
-          </p>
-          <h2
-            className="text-serif-premium mx-auto max-w-xl text-3xl font-light leading-snug sm:text-5xl"
-            style={{ color: 'var(--primary-navy)' }}
-          >
-            Nuestros Servicios
-          </h2>
-          <div className="mx-auto mt-5 flex items-center justify-center gap-3">
-            <div className="h-px w-14" style={{ background: 'var(--accent-rose)' }} />
-            <div className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--accent-rose)' }} />
-            <div className="h-px w-14" style={{ background: 'var(--accent-rose)' }} />
+    <section className="amore-services" aria-labelledby="amore-services-title">
+      <div className="amore-container">
+        <div className="amore-services__heading">
+          <div>
+            <p className="amore-eyebrow">Tratamientos que te acompañan</p>
+            <h2 id="amore-services-title">Nuestros <em>tratamientos</em></h2>
           </div>
-          {loading ? (
-            <p className="mt-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-              Sincronizando catálogo…
-            </p>
-          ) : null}
-          {error ? (
-            <p className="mt-4 text-xs text-amber-800/90">
-              No se pudo cargar el catálogo desde el servidor. Mostramos la versión local.
-            </p>
-          ) : null}
-          {fromDb && !loading && !error ? (
-            <p
-              className="mt-4 text-[10px] font-semibold uppercase tracking-[0.2em]"
-              style={{ color: 'var(--accent-sage)' }}
-            >
-              Catálogo actualizado desde Amore
-            </p>
-          ) : null}
-        </motion.div>
-
-        <div className="mb-10 flex flex-wrap justify-center gap-2">
-          {categorias.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveTab(cat.id)}
-              className="rounded-full px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] transition-all duration-300"
-              style={
-                activeTab === cat.id
-                  ? {
-                      background: 'var(--primary-navy)',
-                      color: '#fff',
-                      boxShadow: '0 6px 20px rgba(0,61,91,0.18)',
-                    }
-                  : {
-                      background: 'rgba(0,61,91,0.06)',
-                      color: 'var(--primary-navy)',
-                    }
-              }
-            >
-              {cat.label}
-            </button>
-          ))}
+          <p>Encontrá el cuidado que buscás. Te ayudamos a elegir un tratamiento adecuado para vos.</p>
         </div>
 
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {categoria.services.map((srv, i) => (
-            <motion.article
-              key={`${categoria.id}-${srv.name}-${i}`}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              whileHover={{ y: -5 }}
-              className="group flex flex-col overflow-hidden"
-              style={{
-                background: '#fff',
-                borderRadius: '1.5rem',
-                boxShadow: '0 4px 24px rgba(0,61,91,0.07)',
-                border: '1px solid rgba(242,215,213,0.5)',
-              }}
-            >
-              <div
-                className="relative aspect-[3/4] max-h-[320px] min-h-[220px] overflow-hidden transition-transform duration-700 group-hover:scale-[1.02] sm:max-h-[380px]"
-                style={{ background: 'var(--bg-cream)' }}
+        <div className="amore-services__featured" aria-label="Explorá los tratamientos por categoría">
+          {EDITORIAL_CATEGORIES.filter((cover) => categorias.some((item) => item.id === cover.id)).map(
+            (cover, index) => (
+              <motion.button
+                type="button"
+                key={cover.id}
+                className="amore-services__featured-card"
+                onClick={() => chooseCategory(cover.id)}
+                initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.55, delay: index * 0.06 }}
+                aria-label={'Ver tratamientos de ' + cover.eyebrow.toLowerCase()}
               >
-                <ServiceIllustration variant={resolveIllustration(srv)} className="absolute inset-0" />
-                {/* Vignette superior sutil para legibilidad de los badges */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/12 via-transparent to-transparent" />
-                <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
-                  {srv.badges.map((b) => (
-                    <span
-                      key={b}
-                      className="rounded-full px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] backdrop-blur-sm"
-                      style={{
-                        background: BADGE_STYLE[b]?.bg ?? 'rgba(255,255,255,0.78)',
-                        color: BADGE_STYLE[b]?.color ?? '#003D5B',
-                      }}
-                    >
-                      {b}
-                    </span>
-                  ))}
+                <EditorialPhoto src={cover.image} fallback={cover.fallback} alt="" />
+                <span className="amore-services__featured-shade" aria-hidden="true" />
+                <span className="amore-services__featured-info">
+                  <span className="amore-services__featured-eyebrow">{cover.eyebrow}</span>
+                  <span className="amore-services__featured-title">{cover.title}</span>
+                  <span className="amore-services__featured-link">Descubrir <ArrowRight size={17} aria-hidden="true" /></span>
+                </span>
+              </motion.button>
+            ),
+          )}
+        </div>
+
+        <div className="amore-services__catalogue" id="amore-catalogo">
+          <div className="amore-services__catalogue-heading">
+            <div>
+              <p className="amore-eyebrow">Un cuidado para cada etapa</p>
+              <h3>Catálogo completo</h3>
+            </div>
+            <p>Seleccioná una categoría para explorar sus servicios.</p>
+          </div>
+
+          <div className="amore-services__tabs" role="group" aria-label="Categorías de servicios">
+            {categorias.map((category) => (
+              <button
+                type="button"
+                key={category.id}
+                aria-pressed={category.id === activeTab}
+                className={category.id === activeTab ? 'amore-services__tab amore-services__tab--active' : 'amore-services__tab'}
+                onClick={() => setActiveTab(category.id)}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+
+          {loading && <p className="amore-services__notice" role="status">Actualizando el catálogo…</p>}
+          {error && <p className="amore-services__notice" role="status">Mostramos el catálogo disponible mientras se restablece la conexión.</p>}
+
+          <motion.div
+            key={activeTab}
+            className="amore-services__grid"
+            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            aria-live="polite"
+          >
+            {categoria.services.map((service, index) => (
+              <article className="amore-services__service" key={categoria.id + service.name + index}>
+                <div className="amore-services__service-visual">
+                  {categoria.id === 'manos' ? (
+                    <div className="amore-services__hands-illustration" role="img" aria-label="Representación editorial del cuidado de manos y uñas">
+                      <span className="amore-services__hands-brand">AMORE</span>
+                      <Hand size={67} strokeWidth={1} aria-hidden="true" />
+                      <span className="amore-services__hands-caption">EL ARTE DE CUIDAR CADA DETALLE</span>
+                    </div>
+                  ) : (
+                  <img
+                    src={editorialSrc(service.image)}
+                    alt={'Imagen ilustrativa de ' + service.name}
+                    width="720"
+                    height="810"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(event) => {
+                      const img = event.currentTarget;
+                      const fallback = asset(service.image || '/body-up.png');
+                      if (img.src !== new URL(fallback, window.location.href).href) img.src = fallback;
+                    }}
+                  />
+                  )}
+                  <span className="amore-services__photo-caption">Imagen ilustrativa</span>
                 </div>
-              </div>
+                <div className="amore-services__service-body">
+                  <div className="amore-services__badges">
+                    {service.badges.map((badge) => (
+                      <span
+                        key={badge}
+                        style={{
+                          color: BADGE_STYLE[badge]?.color ?? '#103a4d',
+                          background: BADGE_STYLE[badge]?.bg ?? '#f4f0eb',
+                        }}
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                  <h4>{service.name}</h4>
+                  <p>{service.desc}</p>
+                  <a
+                    className="amore-services__inquiry"
+                    href={buildWhatsAppHref(service.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={'Consultar por WhatsApp sobre ' + service.name}
+                  >
+                    Consultar tratamiento <ArrowRight size={17} aria-hidden="true" />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </motion.div>
+        </div>
 
-              <div className="flex flex-1 flex-col p-6 sm:p-7">
-                <h3
-                  className="text-serif-premium text-xl font-light leading-snug tracking-wide sm:text-[1.35rem]"
-                  style={{ color: 'var(--primary-navy)' }}
-                >
-                  {srv.name}
-                </h3>
-                <div className="my-4 h-px w-10" style={{ background: 'var(--accent-rose)' }} />
-                <p
-                  className="flex-1 text-[15px] leading-[1.75] sm:text-base"
-                  style={{ color: 'var(--text-muted)', letterSpacing: '0.015em' }}
-                >
-                  {srv.desc}
-                </p>
-                <a
-                  href={buildWhatsAppHref(srv.name)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 flex items-center gap-2 rounded-full px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition-all hover:opacity-90"
-                  style={{ background: 'var(--accent-rose)', color: 'var(--primary-navy)' }}
-                >
-                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 flex-shrink-0" fill="currentColor">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                  </svg>
-                  Consultar por WhatsApp
-                </a>
-              </div>
-            </motion.article>
-          ))}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mt-14 text-center"
-        >
-          <p className="mb-5 text-sm" style={{ color: 'var(--text-muted)' }}>
-            ¿No encontrás lo que buscás? Escribinos y te asesoramos.
-          </p>
+        <div className="amore-services__help">
+          <p>¿Querés orientación para elegir tu tratamiento?</p>
           <a
-            href={buildWhatsAppHref('consulta general')}
+            href={buildWhatsAppHref('asesoramiento sobre tratamientos')}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white transition-all hover:opacity-90"
-            style={{ background: '#25D366', boxShadow: '0 10px 30px rgba(37,211,102,0.25)' }}
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-            </svg>
-            Ver todos los servicios por WhatsApp
+            <MessageCircle size={18} aria-hidden="true" /> Escribinos por WhatsApp
           </a>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

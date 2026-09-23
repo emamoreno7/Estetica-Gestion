@@ -2,9 +2,9 @@
  * Sección "Antes & Después" — social proof interactivo en la landing.
  *
  * Carrusel de casos reales con slider arrastrable para comparar
- * el antes y después. Las imágenes viven en /public/casos/.
- * Para reemplazar un caso, solo cambiá los archivos JPG manteniendo
- * los mismos nombres.
+ * el antes y después. Las imágenes optimizadas WebP viven en /public/casos/.
+ * Los JPG originales se conservan sin retoques y sirven como fuente.
+ * Publicar únicamente resultados y testimonios verificables/autorizados.
  */
 
 import { useState } from 'react';
@@ -33,8 +33,8 @@ const CASOS: Caso[] = [
     testimonio:
       'No buscaba un resultado mágico, buscaba acompañamiento. Las chicas me explicaron todo en cada sesión y vi mi piel cambiar.',
     cliente: 'Sofía R.',
-    beforeSrc: asset('casos/body-up-antes.jpg'),
-    afterSrc: asset('casos/body-up-despues.jpg'),
+    beforeSrc: asset('casos/body-up-antes.webp'),
+    afterSrc: asset('casos/body-up-despues.webp'),
   },
   {
     slug: 'criolipolisis-piernas',
@@ -44,8 +44,8 @@ const CASOS: Caso[] = [
     testimonio:
       'Lo más lindo es entrar y sentir que es tu momento. La crio fue mucho más cómoda de lo que pensaba.',
     cliente: 'Mariela B.',
-    beforeSrc: asset('casos/crio-antes.jpg'),
-    afterSrc: asset('casos/crio-despues.jpg'),
+    beforeSrc: asset('casos/crio-antes.webp'),
+    afterSrc: asset('casos/crio-despues.webp'),
   },
   {
     slug: 'lifting-pestanas',
@@ -55,8 +55,8 @@ const CASOS: Caso[] = [
     testimonio:
       'Mi mirada cambió. Es sutil pero la diferencia entre maquillarme y no maquillarme se nota muchísimo.',
     cliente: 'Camila G.',
-    beforeSrc: asset('casos/pestanas-antes.jpg'),
-    afterSrc: asset('casos/pestanas-despues.jpg'),
+    beforeSrc: asset('casos/pestanas-antes.webp'),
+    afterSrc: asset('casos/pestanas-despues.webp'),
   },
   {
     slug: 'depilacion-piernas',
@@ -66,8 +66,8 @@ const CASOS: Caso[] = [
     testimonio:
       'Ya no me preocupo por la depilación cada semana. La constancia y la atención hicieron toda la diferencia.',
     cliente: 'Laura M.',
-    beforeSrc: asset('casos/depilacion-antes.jpg'),
-    afterSrc: asset('casos/depilacion-despues.jpg'),
+    beforeSrc: asset('casos/depilacion-antes.webp'),
+    afterSrc: asset('casos/depilacion-despues.webp'),
   },
 ];
 
