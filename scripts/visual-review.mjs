@@ -33,6 +33,17 @@ for (const size of views) {
     window.scrollTo(0, 0);
   });
   await page.waitForTimeout(1500);
+  const initialMetrics = await page.evaluate(() => {
+    const resources = performance.getEntriesByType('resource');
+    const scripts = resources.filter(r => r.initiatorType === 'script');
+    const images = resources.filter(r => r.initiatorType === 'img');
+    return {
+      scriptTransferBytes: scripts.reduce((sum,r) => sum + (r.transferSize || 0), 0),
+      imageTransferBytes: images.reduce((sum,r) => sum + (r.transferSize || 0), 0),
+      scriptRequests: scripts.length,
+      imageRequests: images.length,
+    };
+  });
   await page.screenshot({ path: output + '/' + size.name + '.png', fullPage: true, animations: 'disabled' });
   const check = await page.evaluate(() => {
     const img = document.querySelector('.amore-hero__visual img');
@@ -53,16 +64,37 @@ for (const size of views) {
     };
   });
   let mobileMenu = null;
+  let escapedMenu = null;
   if (size.width <= 760) {
     const trigger = page.getByRole('button', { name: 'Abrir menú' });
     await trigger.click();
     mobileMenu = await page.locator('#amore-nav').isVisible();
     await page.screenshot({ path: output + '/' + size.name + '-menu.png', animations: 'disabled' });
+    await page.keyboard.press('Escape');
+    escapedMenu = await page.getByRole('button', { name: 'Abrir menú' }).getAttribute('aria-expanded') === 'false';
   }
-  const result = { viewport: size.name, httpStatus: response?.status(), ...check, mobileMenu, errors };
+
+  // Contratos de navegación y contacto: detectan regresiones sin utilizar credenciales.
+  const bookingHref = await page.locator('.amore-header__booking').getAttribute('href');
+  const bookingOk = /^https:\/\/wa\.me\/[0-9]+\?/.test(bookingHref || '');
+  const tabs = page.locator('.amore-services__tab');
+  const handsTab = tabs.filter({ hasText: /manos/i }).first();
+  const handsAvailable = await handsTab.count() > 0;
+  let handsCards = null;
+  if (handsAvailable) {
+    await handsTab.click();
+    handsCards = await page.locator('.amore-services__service').count();
+    await tabs.first().click();
+  }
+  const result = {
+    viewport: size.name, httpStatus: response?.status(), ...check,
+    mobileMenu, escapedMenu, bookingOk, handsCards, initialMetrics, errors
+  };
   console.log(JSON.stringify(result));
   report.push(result);
-  if (result.documentWidth > size.width + 2 || !result.heroImageLoaded || result.httpStatus !== 200 || !mobileMenu && size.width <= 760 || errors.length) failed = true;
+  if (result.documentWidth > size.width + 2 || !result.heroImageLoaded || result.httpStatus !== 200 ||
+      !bookingOk || (handsAvailable && !handsCards) ||
+      (size.width <= 760 && (!mobileMenu || !escapedMenu)) || errors.length) failed = true;
   await page.close();
 }
 await browser.close();

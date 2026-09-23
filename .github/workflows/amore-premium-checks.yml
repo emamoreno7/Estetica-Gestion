@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [redesign/amore-premium]
+    branches: [redesign/amore-premium, redesign/amore-phase2]
 
 permissions:
   contents: read
