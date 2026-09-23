@@ -37,9 +37,9 @@ export function LandingPage({ onEnter, onRegister }: Props) {
         <section id="inicio" className="amore-hero" aria-labelledby="amore-hero-title">
           <div className="amore-hero__visual" aria-hidden="true">
             <img
-              src={asset('amore-hero.webp')}
-              width="1100"
-              height="619"
+              src={asset('masajesr.png')}
+              width="1600"
+              height="1000"
               alt=""
               fetchPriority="high"
               decoding="async"
