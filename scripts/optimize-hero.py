@@ -11,12 +11,14 @@ PUBLIC = Path(__file__).resolve().parents[1] / "public"
 SOURCE = PUBLIC / "hero-editorial-source.webp"
 
 if not SOURCE.is_file():
-    raise SystemExit("Falta la fotografía maestra hero-editorial-source.webp")
+    # Vista previa funcional: sólo mientras se publica la fotografía HD aprobada.
+    SOURCE = PUBLIC / "amore-hero.webp"
+    print("AVISO: creando variantes preliminares desde el hero anterior. Reemplazar por la fuente HD antes de fusionar.")
 
 with Image.open(SOURCE) as raw:
     image = ImageOps.exif_transpose(raw).convert("RGB")
     if min(image.size) < 900:
-        raise SystemExit(f"La foto fuente necesita resolución editorial: {image.size}")
+        print(f"AVISO: fuente temporal de {image.size}; todavía falta la foto maestra en alta calidad.")
 
     for width, quality in [(768, 81), (1280, 83), (1920, 83)]:
         target = image.resize(
@@ -33,7 +35,7 @@ with Image.open(SOURCE) as raw:
     # El rostro y el gesto quedan visibles sin cargar 1920 px en un celular.
     crop = ImageOps.fit(
         image, (780, 880), method=Image.Resampling.LANCZOS,
-        centering=(0.70, 0.33),
+        centering=(0.93, 0.33),
     )
     mobile = PUBLIC / "hero-editorial-mobile.webp"
     crop.save(mobile, format="WEBP", quality=82, method=6)
