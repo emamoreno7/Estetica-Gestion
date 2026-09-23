@@ -1,0 +1,130 @@
+/* Amore Premium — estilos acotados a la landing. El portal/admin conserva su tema. */
+.amore-landing {
+  --amore-ink: #103a4d;
+  --amore-sage: #82978b;
+  --amore-blush: #f1dbd8;
+  --amore-ivory: #fbf8f5;
+  color: var(--amore-ink);
+  background: var(--amore-ivory);
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.amore-landing h1,
+.amore-landing h2,
+.amore-landing h3 {
+  font-family: 'Fraunces', Georgia, serif !important;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  letter-spacing: -0.045em !important;
+  color: var(--amore-ink) !important;
+}
+.amore-landing h1,
+.amore-landing h2 { line-height: 1.08 !important; }
+.amore-landing em { font-weight: 400; font-style: italic; }
+.amore-landing a { text-decoration: none; }
+.amore-container { width: min(1200px, calc(100% - 3rem)); margin-inline: auto; }
+.amore-anchor, .amore-landing section[id] { scroll-margin-top: 100px; }
+.amore-eyebrow { font: 600 0.65rem/1.5 'Montserrat', sans-serif; letter-spacing: .28em; text-transform: uppercase; color: #72867b; }
+
+.amore-skip-link { position: fixed; z-index: 100; top: -100px; left: 1rem; padding: .85rem 1.2rem; background: var(--amore-ink); color: white; border-radius: .5rem; }
+.amore-skip-link:focus { top: 1rem; }
+
+.amore-header { position: fixed; top: 0; left: 0; right: 0; z-index: 60; background: rgba(251,248,245,.93); border-bottom: 1px solid rgba(16,58,77,.09); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.amore-header__inner { min-height: 86px; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.amore-header__brand { flex-shrink: 0; }
+.amore-header__brand img { display: block; width: 70px; height: 70px; object-fit: contain; border-radius: 50%; }
+.amore-header__nav { display: flex; align-items: center; gap: clamp(1rem, 2vw, 2rem); }
+.amore-header__nav a { position: relative; font-size: .76rem; color: var(--amore-ink); font-weight: 500; transition: color .2s; }
+.amore-header__nav a::after { content: ''; position: absolute; height: 1px; background: #c9a89c; left: 0; right: 100%; bottom: -.55rem; transition: right .25s; }
+.amore-header__nav a:hover::after, .amore-header__nav a:focus-visible::after { right: 0; }
+.amore-header__actions { display: flex; align-items: center; gap: .65rem; }
+.amore-header__account, .amore-header__booking, .amore-header__mobile-account { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; white-space: nowrap; font: 600 .7rem/1 'Montserrat', sans-serif; }
+.amore-landing .amore-header__account { color: var(--amore-ink); background: #fff; border: 1px solid #e5e3de; padding: .82rem 1rem; box-shadow: none !important; }
+.amore-header__booking { color: white; background: var(--amore-ink); border-radius: 100px; padding: .95rem 1.3rem; transition: background .2s; }
+.amore-header__booking:hover { background: #20536b; }
+.amore-landing .amore-header__menu { display: none; border: 0; background: none; box-shadow: none !important; padding: .45rem; color: var(--amore-ink); }
+.amore-header__mobile-account { display: none; }
+
+.amore-landing .amore-hero { isolation: isolate; position: relative; display: flex; align-items: center; min-height: 760px; overflow: hidden; padding: 140px 0 80px !important; background: var(--amore-ivory); }
+.amore-hero__visual, .amore-hero__overlay { position: absolute; inset: 0; pointer-events: none; }
+.amore-hero__visual { z-index: -2; }
+.amore-hero__visual img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
+.amore-hero__overlay { z-index: -1; background: linear-gradient(90deg, rgba(251,248,245,.99) 0%, rgba(251,248,245,.97) 25%, rgba(251,248,245,.72) 44%, rgba(251,248,245,.07) 76%); }
+.amore-hero__inner { position: relative; z-index: 1; }
+.amore-hero__copy { width: min(570px, 53%); }
+.amore-landing .amore-hero h1 { font-size: clamp(3.5rem, 5.8vw, 6.2rem); margin: 1.3rem 0 1.3rem; }
+.amore-hero h1 em { color: #607d79; }
+.amore-hero__description { max-width: 480px; font-size: clamp(.89rem, 1.22vw, 1rem); line-height: 1.85; color: #637078; }
+.amore-hero__buttons { display: flex; flex-wrap: wrap; gap: .8rem; margin: 2rem 0 2.2rem; }
+.amore-link { display: inline-flex; justify-content: center; align-items: center; gap: .8rem; min-height: 47px; padding: .85rem 1.4rem; border: 1px solid var(--amore-ink); border-radius: 100px; font: 600 .72rem/1.3 'Montserrat', sans-serif; transition: transform .2s, background .2s, color .2s; }
+.amore-link:hover { transform: translateY(-2px); }
+.amore-link:focus-visible, .amore-header a:focus-visible, .amore-header button:focus-visible { outline: 2px solid #ac8585; outline-offset: 4px; }
+.amore-link--primary { background: var(--amore-ink); color: #fff; box-shadow: 0 8px 24px rgba(16,58,77,.12); }
+.amore-link--primary:hover { background: #20536b; color: #fff; }
+.amore-link--outline { background: rgba(255,255,255,.84); color: var(--amore-ink); border-color: #e6e0d9; }
+.amore-link--outline:hover { background: #fff; }
+.amore-hero__values { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0; }
+.amore-hero__values li { display: flex; flex-direction: column; align-items: center; gap: .4rem; min-width: 76px; padding: .1rem .85rem; color: #839787; border-right: 1px solid #e6ddd8; }
+.amore-hero__values li:first-child { padding-left: 0; }
+.amore-hero__values li:last-child { border-right: 0; }
+.amore-hero__values span { color: #69757a; font-size: .55rem; letter-spacing: .1em; text-transform: uppercase; }
+.amore-hero__side-note { position: absolute; right: 4%; top: 26%; font-family: 'Fraunces', Georgia, serif; font-size: 1.45rem; font-style: italic; text-align: center; line-height: 1.35; color: rgba(16,58,77,.68); }
+
+.amore-landing .amore-experience { padding: clamp(4rem, 7vw, 7rem) 0 !important; background: #fff; }
+.amore-experience__intro { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 2.2rem; }
+.amore-experience__intro h2 { font-size: clamp(2.4rem, 4vw, 4.2rem); margin-top: .65rem; }
+.amore-experience__intro h2 em { color: #82988c; }
+.amore-experience__description { max-width: 400px; color: #647078; line-height: 1.9; font-size: .92rem; }
+.amore-experience__grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1rem; }
+.amore-experience__card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 2rem 1.25rem; border: 1px solid #ede5df; background: #fffdfc; border-radius: 1rem; min-height: 230px; box-shadow: 0 8px 30px rgba(16,58,77,.035); }
+.amore-experience__card h3 { font-size: 1.25rem; letter-spacing: -.025em !important; margin: 1.15rem 0 .6rem; }
+.amore-experience__card p { font-size: .77rem; line-height: 1.75; color: #758087; }
+.amore-experience__icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 50%; color: #56716c; }
+.amore-experience__icon--sage { background: #e8eeea; }
+.amore-experience__icon--rose { background: #f7e8e7; }
+.amore-experience__icon--sand { background: #f1e8e0; }
+
+.amore-landing .amore-closing { padding: clamp(3rem, 5vw, 5rem) 0 !important; background: #f7ece9; border-top: 1px solid #ecdcd7; }
+.amore-closing__inner { display: flex; justify-content: space-between; align-items: center; gap: 2rem; }
+.amore-closing h2 { font-size: clamp(2rem, 3.2vw, 3.5rem); margin: .5rem 0 .7rem; }
+.amore-closing h2 em { color: #668079; }
+.amore-closing p:not(.amore-eyebrow) { color: #69767a; line-height: 1.7; font-size: .88rem; }
+
+@media (max-width: 1050px) {
+  .amore-header__nav { gap: .9rem; }
+  .amore-header__nav a { font-size: .69rem; }
+  .amore-header__account { display: none !important; }
+  .amore-hero__copy { width: 58%; }
+  .amore-hero__side-note { display: none; }
+}
+@media (max-width: 760px) {
+  .amore-container { width: min(100% - 2rem, 560px); }
+  .amore-header__inner { min-height: 72px; }
+  .amore-header__brand img { width: 58px; height: 58px; }
+  .amore-landing .amore-header__menu { display: inline-flex; align-items: center; justify-content: center; }
+  .amore-header__booking { padding: .76rem .9rem; font-size: .65rem; }
+  .amore-header__booking svg { display: none; }
+  .amore-header__nav { display: none; position: absolute; top: 72px; left: 0; right: 0; padding: 1rem 1.5rem 1.75rem; background: #fbf8f5; box-shadow: 0 15px 25px rgba(16,58,77,.09); border-top: 1px solid #ede4e0; }
+  .amore-header__nav--open { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  .amore-header__nav a { padding: .85rem 0; font-size: .9rem; border-bottom: 1px solid #efe8e2; }
+  .amore-header__mobile-account { display: inline-flex; margin-top: 1rem; align-self: flex-start; background: #e9eeeb; padding: .8rem 1.2rem; color: var(--amore-ink); }
+  .amore-landing .amore-hero { min-height: 780px; align-items: flex-end; padding: 395px 0 3rem !important; }
+  .amore-hero__visual img { object-position: 67% top; }
+  .amore-hero__overlay { background: linear-gradient(180deg, rgba(251,248,245,0) 0%, rgba(251,248,245,.12) 34%, #fbf8f5 53%, #fbf8f5 100%); }
+  .amore-hero__copy { width: 100%; }
+  .amore-landing .amore-hero h1 { font-size: clamp(3.1rem, 11vw, 4.7rem); }
+  .amore-hero__description { font-size: .89rem; }
+  .amore-hero__buttons { margin: 1.6rem 0; }
+  .amore-hero__values li { min-width: 25%; padding-inline: .35rem; }
+  .amore-experience__intro, .amore-closing__inner { flex-direction: column; align-items: flex-start; }
+  .amore-experience__grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .amore-experience__card { min-height: 235px; padding: 1.5rem .8rem; }
+}
+@media (max-width: 400px) {
+  .amore-hero__buttons { flex-direction: column; align-items: stretch; }
+  .amore-hero__values li { min-width: 50%; padding-block: .7rem; border-right: 0; }
+  .amore-experience__grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .amore-landing *, .amore-landing *::before, .amore-landing *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
