@@ -29,10 +29,14 @@ jobs:
           python - <<'PY'
           from PIL import Image
           from pathlib import Path
+          import hashlib
           p=Path('public/hero-editorial-source.webp')
+          expected='6e30e4202987ba8f36e272605e889a81db22c42acf97b48502dedc0fe774d916'
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual == expected, (actual, expected)
           im=Image.open(p)
           im.verify()
-          print('hero fuente verificado:', p.stat().st_size, 'bytes')
+          print('hero fuente verificado:', p.stat().st_size, 'bytes', actual)
           PY
       - name: Procesar fotografía aprobada
         run: python scripts/optimize-hero.py
