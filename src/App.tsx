@@ -1,31 +1,44 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { CitasDataProvider } from '@/context/CitasDataContext';
 import { RootLayout } from '@/components/RootLayout';
 import { LandingRoute } from '@/features/landing/LandingRoute';
-import AccessDeniedPage from '@/features/auth/AccessDeniedPage';
-import ClientLoginPage from '@/features/auth/ClientLoginPage';
-import ClientSignupPage from '@/features/auth/ClientSignupPage';
-import { PortalGate } from '@/features/portal/PortalGate';
-import AdminPage from '@/features/admin/AdminPage';
 
-// Si el sitio se sirve en subpath (ej. GitHub Pages: /Estetica-Gestion/),
-// Vite expone import.meta.env.BASE_URL con trailing slash. React Router
-// quiere el basename sin trailing slash.
+// El público no descarga el panel ni el portal antes de necesitarlos.
+const AccessDeniedPage = lazy(() => import('@/features/auth/AccessDeniedPage'));
+const ClientLoginPage = lazy(() => import('@/features/auth/ClientLoginPage'));
+const ClientSignupPage = lazy(() => import('@/features/auth/ClientSignupPage'));
+const PortalGate = lazy(() => import('@/features/portal/PortalGate').then((mod) => ({ default: mod.PortalGate })));
+const AdminPage = lazy(() => import('@/features/admin/AdminPage'));
+
+// BASE_URL conserva deep links en GitHub Pages sin modificar rutas de negocio.
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function RouteLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center px-6"
+      role="status" aria-live="polite"
+      style={{ background: 'var(--bg-cream)', color: 'var(--primary-navy)' }}>
+      <p className="text-sm">Cargando tu espacio Amore…</p>
+    </div>
+  );
+}
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingRoute />} />
-      <Route path="/acceso" element={<AccessDeniedPage />} />
-      <Route path="/ingreso" element={<ClientLoginPage />} />
-      <Route path="/login" element={<ClientLoginPage />} />
-      <Route path="/unete" element={<ClientSignupPage />} />
-      <Route path="/portal" element={<PortalGate />} />
-      <Route path="/admin/*" element={<AdminPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<RouteLoader />}>
+      <Routes>
+        <Route path="/" element={<LandingRoute />} />
+        <Route path="/acceso" element={<AccessDeniedPage />} />
+        <Route path="/ingreso" element={<ClientLoginPage />} />
+        <Route path="/login" element={<ClientLoginPage />} />
+        <Route path="/unete" element={<ClientSignupPage />} />
+        <Route path="/portal" element={<PortalGate />} />
+        <Route path="/admin/*" element={<AdminPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 
@@ -34,9 +47,7 @@ export default function App() {
     <BrowserRouter basename={basename}>
       <AuthProvider>
         <CitasDataProvider>
-          <RootLayout>
-            <AppRoutes />
-          </RootLayout>
+          <RootLayout><AppRoutes /></RootLayout>
         </CitasDataProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -130,3 +130,18 @@
 @media (prefers-reduced-motion: reduce) {
   .amore-landing *, .amore-landing *::before, .amore-landing *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+
+/* Phase 2: interacciones finas sólo para dispositivos con puntero preciso. */
+@media (hover:hover) and (pointer:fine) {
+  .amore-header__brand img { transition:transform .3s ease,filter .3s ease; }
+  .amore-header__brand:hover img { transform:scale(1.035); filter:drop-shadow(0 2px 8px rgba(16,58,77,.09)); }
+  .amore-experience__card { transition:transform .32s ease, box-shadow .32s ease, border-color .32s ease; }
+  .amore-experience__card:hover { transform:translateY(-3px); border-color:#e8d7cd; box-shadow:0 13px 36px rgba(16,58,77,.075); }
+}
+.amore-landing .amore-link:active { transform:translateY(0); }
+.amore-landing :focus-visible { outline-color:#9c7774; }
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto!important; }
+  .amore-header__brand img,.amore-experience__card { transition:none!important; }
+}
