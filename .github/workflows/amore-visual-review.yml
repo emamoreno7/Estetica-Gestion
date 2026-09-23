@@ -5,6 +5,8 @@ on:
     branches: [redesign/amore-premium]
     paths:
       - 'scripts/visual-review.mjs'
+      - 'src/features/landing/**'
+      - 'public/amore-hero.webp'
       - '.github/workflows/amore-visual-review.yml'
   workflow_dispatch: {}
 
