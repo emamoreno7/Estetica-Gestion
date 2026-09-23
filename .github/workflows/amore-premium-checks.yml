@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [redesign/amore-premium, redesign/amore-phase2]
+    branches: [infra/amore-custom-domain]
 
 permissions:
   contents: read
@@ -23,5 +23,7 @@ jobs:
         run: npx tsc --noEmit
       - name: Vite production build
         run: npm run build
-      - name: GitHub Pages build
-        run: npm run build:pages
+      - name: Custom-domain build
+        run: npm run build:domain
+      - name: Validar base y metadatos del dominio
+        run: npm run verify:domain

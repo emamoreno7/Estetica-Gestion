@@ -1,7 +1,8 @@
 import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-const base = 'http://127.0.0.1:4173/Estetica-Gestion/';
+const base = process.env.AMORE_PREVIEW_URL || 'http://127.0.0.1:4173/Estetica-Gestion/';
+const expectedBasePath = new URL(base).pathname;
 const output = 'visual-review';
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ headless: true });
@@ -108,12 +109,12 @@ for (const size of views) {
       routeSmoke[item.path] = routeResponse?.status() === 200;
     }
     await page.goto(base + 'portal', { waitUntil: 'domcontentloaded' });
-    await page.waitForURL('**/Estetica-Gestion/acceso', { timeout: 15000 });
-    routeSmoke.portalProtected = page.url().endsWith('/acceso');
+    await page.waitForURL(url => url.pathname === expectedBasePath + 'acceso', { timeout: 15000 });
+    routeSmoke.portalProtected = new URL(page.url()).pathname === expectedBasePath + 'acceso';
 
     await page.goto(base + 'admin/', { waitUntil: 'domcontentloaded' });
-    await page.waitForURL('**/Estetica-Gestion/ingreso', { timeout: 15000 });
-    routeSmoke.adminProtected = page.url().endsWith('/ingreso');
+    await page.waitForURL(url => url.pathname === expectedBasePath + 'ingreso', { timeout: 15000 });
+    routeSmoke.adminProtected = new URL(page.url()).pathname === expectedBasePath + 'ingreso';
 
     result.routeSmoke = routeSmoke;
     if (Object.values(routeSmoke).some(value => value !== true)) failed = true;

@@ -13,12 +13,12 @@
       script transforma la URL real en una query string que index.html
       sabe interpretar y restaura la ruta sin recargar la página.
 
-      segmentCount = 1 → mantenemos el primer segmento (/Estetica-Gestion/).
-      Cambiar a 0 si el sitio se sirve en raíz (dominio custom o user-page).
+      segmentCount = 0 → dominio personalizado desde la raíz (/).
+      Si se revierte a GitHub Pages en /Estetica-Gestion/, restaurar a 1.
     -->
     <script type="text/javascript">
       (function () {
-        var segmentCount = 1;
+        var segmentCount = 0;
         var l = window.location;
         l.replace(
           l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +

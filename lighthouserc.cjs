@@ -2,7 +2,7 @@
 module.exports = {
   ci: {
     collect: {
-      url: ['http://127.0.0.1:4173/Estetica-Gestion/'],
+      url: ['http://127.0.0.1:4173/'],
       numberOfRuns: 1,
       settings: {
         chromeFlags: '--headless --no-sandbox --disable-dev-shm-usage',
