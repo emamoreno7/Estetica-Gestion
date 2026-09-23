@@ -1,0 +1,34 @@
+name: Amore Mediciones y evolucion
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/features/mediciones/**'
+      - 'src/features/admin/ClienteDrawer.tsx'
+      - 'src/features/auth/ClientLoginForm.tsx'
+      - 'src/App.tsx'
+      - 'supabase/migrations/*mediciones*'
+      - 'scripts/test-mediciones.mjs'
+      - '.github/workflows/amore-mediciones-checks.yml'
+  push:
+    branches: [feature/amore-mediciones-historicas]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Pruebas unitarias
+        run: node scripts/test-mediciones.mjs
+      - name: TypeScript estricto
+        run: npx tsc --noEmit
+      - name: Build Vite
+        run: npm run build
+      - name: Build GitHub Pages
+        run: npm run build:pages
