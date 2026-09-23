@@ -54,7 +54,7 @@ export async function listMediciones(clienteId: string): Promise<{
     .order('fecha', { ascending: false })
     .order('registrado_at', { ascending: false });
   return {
-    rows: error ? [] : (data ?? []).map((row) => mapMeasurement(row as Record<string, unknown>)),
+    rows: error ? [] : (data ?? []).map((row) => mapMeasurement(row as unknown as Record<string, unknown>)),
     error: error ? displayDbError(error) : null,
   };
 }
@@ -69,7 +69,7 @@ export async function createMedicion(input: MedicionInput): Promise<{
     .insert({ ...input, registrado_por: identity.user.id })
     .select(COLUMNS).single();
   return {
-    item: data ? mapMeasurement(data as Record<string, unknown>) : null,
+    item: data ? mapMeasurement(data as unknown as Record<string, unknown>) : null,
     error: error ? displayDbError(error) : null,
   };
 }
