@@ -32,7 +32,7 @@
 .amore-header { position: fixed; top: 0; left: 0; right: 0; z-index: 60; background: rgba(251,248,245,.93); border-bottom: 1px solid rgba(16,58,77,.09); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 .amore-header__inner { min-height: 86px; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
 .amore-header__brand { flex-shrink: 0; }
-.amore-header__brand img { display: block; width: 70px; height: 70px; object-fit: contain; border-radius: 50%; }
+.amore-header__brand img { display: block; width: 70px; height: 70px; object-fit: cover; object-position: center 43%; border-radius: 50%; }
 .amore-header__nav { display: flex; align-items: center; gap: clamp(1rem, 2vw, 2rem); }
 .amore-header__nav a { position: relative; font-size: .76rem; color: var(--amore-ink); font-weight: 500; transition: color .2s; }
 .amore-header__nav a::after { content: ''; position: absolute; height: 1px; background: #c9a89c; left: 0; right: 100%; bottom: -.55rem; transition: right .25s; }

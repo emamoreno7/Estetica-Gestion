@@ -5,7 +5,7 @@
 .amore-services__heading h2 em { color: #7c9585; }
 .amore-services__heading > p, .amore-services__catalogue-heading > p { max-width: 370px; font-size: .91rem; line-height: 1.85; color: #728086; }
 .amore-services__featured { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1rem; }
-.amore-landing .amore-services__featured-card { position: relative; display: block; border: 0; padding: 0; overflow: hidden; min-height: 380px; aspect-ratio: 3/4; text-align: left; border-radius: 1rem !important; background: #e9e3dc; box-shadow: 0 14px 30px rgba(16,58,77,.07) !important; }
+.amore-landing .amore-services__featured-card { position: relative; display: block; border: 0; padding: 0; overflow: hidden; min-height: 0; aspect-ratio: 3/4; text-align: left; border-radius: 1rem !important; background: #e9e3dc; box-shadow: 0 14px 30px rgba(16,58,77,.07) !important; }
 .amore-services__featured-card > img { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .65s cubic-bezier(.2,.65,.3,1); }
 .amore-services__featured-card:hover > img, .amore-services__featured-card:focus-visible > img { transform: scale(1.045); }
 .amore-services__featured-shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 25%, rgba(20,32,32,.08) 47%, rgba(14,30,34,.77) 100%); }
@@ -43,7 +43,7 @@
  .amore-services__heading, .amore-services__catalogue-heading { flex-direction: column; align-items: flex-start; gap: 1rem; }
  .amore-services__heading > p, .amore-services__catalogue-heading > p { max-width: 100%; }
  .amore-services__featured { gap: .75rem; }
- .amore-landing .amore-services__featured-card { min-height: 260px; }
+ .amore-landing .amore-services__featured-card { min-height: 0; }
  .amore-services__featured-info { left: .9rem; right: .9rem; bottom: 1.1rem; gap: .5rem; }
  .amore-services__featured-title { font-size: 1.4rem; }
  .amore-services__tabs { flex-wrap: nowrap; margin-inline: -1rem; padding-inline: 1rem; overflow-x: auto; scrollbar-width: thin; }

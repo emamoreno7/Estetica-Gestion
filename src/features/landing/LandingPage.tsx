@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Heart, Leaf, ShieldCheck, Sparkles } from 'lucide-react';
 import VirtualAssistantChat from '@/components/VirtualAssistantChat';
@@ -27,6 +28,23 @@ const VALUES = [
 
 export function LandingPage({ onEnter, onRegister }: Props) {
   const reduceMotion = useReducedMotion();
+  const [showFloatingContact, setShowFloatingContact] = useState(false);
+  const [showDesktopAssistant, setShowDesktopAssistant] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      const desktop = window.innerWidth > 760;
+      setShowDesktopAssistant(desktop);
+      setShowFloatingContact(desktop || window.scrollY > 580);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
 
   return (
     <div className="amore-landing">
@@ -74,7 +92,6 @@ export function LandingPage({ onEnter, onRegister }: Props) {
               </ul>
             </motion.div>
           </div>
-          <p className="amore-hero__side-note" aria-hidden="true">Tu momento<br />empieza acá.</p>
         </section>
 
         <ExperienciaAmore />
@@ -99,8 +116,8 @@ export function LandingPage({ onEnter, onRegister }: Props) {
       </main>
 
       <LandingFooter />
-      <VirtualAssistantChat whatsappHref={buildWhatsAppHref} />
-      <WhatsAppFloatingButton />
+      {showDesktopAssistant && <VirtualAssistantChat whatsappHref={buildWhatsAppHref} />}
+      {showFloatingContact && <WhatsAppFloatingButton />}
     </div>
   );
 }
