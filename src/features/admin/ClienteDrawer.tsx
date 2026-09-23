@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity,
@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Ruler,
   MapPin,
   Pencil,
   Phone,
@@ -41,11 +42,14 @@ import EditarSesionModal from './EditarSesionModal';
 import EditarTratamientoModal from './EditarTratamientoModal';
 import { insertNotificacion } from '@/lib/notificacionesApi';
 
-type TabId = 'tratamientos' | 'citas' | 'datos';
+const MedicionesPanel = lazy(() => import('@/features/mediciones/MedicionesPanel'));
+
+type TabId = 'tratamientos' | 'citas' | 'mediciones' | 'datos';
 
 const TABS: { id: TabId; label: string; icon: typeof Activity }[] = [
   { id: 'tratamientos', label: 'Tratamientos', icon: Sparkles },
   { id: 'citas', label: 'Citas', icon: CalendarDays },
+  { id: 'mediciones', label: 'Medidas y evolución', icon: Ruler },
   { id: 'datos', label: 'Datos', icon: UserIcon },
 ];
 
@@ -247,7 +251,7 @@ const [editarTrat, setEditarTrat] = useState<TratamientoClienteRow | null>(null)
 
             {/* ─── Tabs ───────────────────────────────────── */}
             <nav
-              className="flex shrink-0 gap-1 border-b px-4 py-2"
+              className="flex shrink-0 gap-1 overflow-x-auto border-b px-4 py-2"
               style={{ borderColor: 'rgba(242,215,213,0.55)' }}
             >
               {TABS.map((t) => {
@@ -257,7 +261,7 @@ const [editarTrat, setEditarTrat] = useState<TratamientoClienteRow | null>(null)
                     key={t.id}
                     type="button"
                     onClick={() => setTab(t.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[11px] font-semibold uppercase tracking-wider transition ${
+                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-[11px] font-semibold uppercase tracking-wider transition ${
                       isActive
                         ? 'bg-[#003D5B] text-white shadow'
                         : 'text-[#003D5B]/65 hover:bg-[#F2D7D5]/30'
@@ -301,6 +305,11 @@ const [editarTrat, setEditarTrat] = useState<TratamientoClienteRow | null>(null)
                 />
               ) : null}
 
+              {tab === 'mediciones' ? (
+                <Suspense fallback={<div className="py-8 text-sm text-[#58747b]">Cargando medidas…</div>}>
+                  <MedicionesPanel clienteId={cliente.id} clienteNombre={cliente.full_name} isAdmin />
+                </Suspense>
+              ) : null}
               {tab === 'datos' ? <TabDatos cliente={cliente} stats={stats} /> : null}
             </div>
           </div>

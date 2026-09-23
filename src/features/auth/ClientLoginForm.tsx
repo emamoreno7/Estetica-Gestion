@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
+import { isPortalAdmin } from '@/config/admin';
 
 function isValidEmail(raw: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.trim());
@@ -46,6 +47,15 @@ export default function ClientLoginForm() {
     if (signErr) {
       setError(signErr.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : signErr.message);
       return;
+    }
+    // El personal autorizado tiene una ruta independiente: nunca abre /admin.
+    // Si aún no se aplicó la migración, conservamos el ingreso tradicional.
+    if (!isPortalAdmin(mail)) {
+      const { data: canMeasure, error: permissionError } = await supabase.rpc('puede_registrar_mediciones');
+      if (!permissionError && canMeasure === true) {
+        navigate('/equipo/medidas', { replace: true });
+        return;
+      }
     }
     navigate('/portal', { replace: true });
   }

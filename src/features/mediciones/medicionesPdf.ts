@@ -83,7 +83,7 @@ export async function downloadMeasurementReport(
     doc.text('Sin registros para esta zona.', 17, 67);
   }
 
-  const widths = [22, 18, 20, ...MEASURE_FIELDS.map(() => 26.5)];
+  const widths = [22, 18, 20, ...MEASURE_FIELDS.map(() => 24.5)];
   const starts: number[] = [17];
   widths.forEach((w, i) => starts.push(starts[i] + w));
   const cols = ['Fecha', 'Sesión', 'Peso', ...MEASURE_FIELDS.map((m) => m.short)];

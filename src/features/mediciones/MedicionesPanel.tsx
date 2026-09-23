@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { Activity, ArrowDownToLine, CalendarDays, CheckCircle2, ChevronDown,
-  ClipboardList, Info, Loader2, Plus, Ruler, ShieldAlert, Sparkles, Trash2, X } from 'lucide-react';
+  ClipboardList, Info, Loader2, Plus, Ruler, ShieldAlert, Trash2, X } from 'lucide-react';
 import { createMedicion, annulMedicion, listMediciones } from './medicionesApi';
 import { activeChronological, buildMeasurementValues, CHART_FIELDS, EMPTY_VALUES,
   formatMeasurement, MEASURE_FIELDS, metricProgress,

@@ -282,3 +282,16 @@
   .amore-measures *, .amore-advice-backdrop *,
   .amore-measures *::before,.amore-advice-backdrop *::before {transition:none!important;animation:none!important;}
 }
+
+
+/* Acceso de personal autorizado: no interfiere con el panel principal */
+.amore-team-access {margin:2rem 0;}
+.amore-team-access__panel {max-width:740px;margin-top:1rem;padding:1.5rem;background:#fff;border:1px solid #e9e3dc;border-radius:18px;}
+.amore-team-access__panel h2 {font:400 1.65rem/1.15 'Fraunces',Georgia,serif!important;color:#193e50!important;margin-bottom:.75rem;}
+.amore-team-access__panel p {font-size:.78rem;line-height:1.7;color:#71837e;}
+.amore-team-access__panel form {display:flex;align-items:end;gap:.75rem;flex-wrap:wrap;margin:1.25rem 0;}
+.amore-team-access__panel label {display:block;flex:1 1 250px;font-size:.72rem;color:#3e5d66;font-weight:600;}
+.amore-team-access__panel input {display:block;width:100%;padding:.83rem;margin-top:.4rem;border:1px solid #e3ddd5;border-radius:12px;background:white;}
+.amore-team-access__list {display:grid;gap:.65rem;margin-top:1rem;}
+.amore-team-access__list > div {display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem 0;border-top:1px solid #eee9e4;font-size:.75rem;}
+.amore-team-access__list span {overflow-wrap:anywhere;}
