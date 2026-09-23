@@ -52,3 +52,9 @@
 }
 @media(max-width: 350px) { .amore-services__featured { grid-template-columns: 1fr; } }
 @media(prefers-reduced-motion:reduce) { .amore-services__featured-card > img, .amore-services__service-visual > img { transition: none; } }
+
+/* Alternativa editorial propia para Manos y Uñas hasta contar con fotografía específica aprobada. */
+.amore-services__hands-illustration { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.2rem; color:#6b877b; background:radial-gradient(circle at 80% 20%,rgba(217,201,191,.35),transparent 55%),linear-gradient(135deg,#faf6f2,#e8ede7); }
+.amore-services__hands-illustration::before { content:''; position:absolute; width:67%; aspect-ratio:1; border:1px solid rgba(108,135,123,.23); border-radius:50%; }
+.amore-services__hands-brand { font:400 clamp(1.4rem,3vw,2.2rem) 'Fraunces',Georgia,serif; letter-spacing:.09em; color:#103a4d; }
+.amore-services__hands-caption { font:600 .55rem 'Montserrat',sans-serif; letter-spacing:.18em; color:#617b72; text-align:center; }

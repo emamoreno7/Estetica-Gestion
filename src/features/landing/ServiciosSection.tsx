@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, MessageCircle } from 'lucide-react';
+import { ArrowRight, Hand, MessageCircle } from 'lucide-react';
 import { BADGE_STYLE, serviciosCatalogo } from '@/data/serviciosCatalogo';
 import { useServiciosCatalogo } from '@/hooks/useServiciosCatalogo';
 import { buildWhatsAppHref } from '@/lib/whatsapp';
@@ -169,6 +169,13 @@ export function ServiciosSection() {
             {categoria.services.map((service, index) => (
               <article className="amore-services__service" key={categoria.id + service.name + index}>
                 <div className="amore-services__service-visual">
+                  {categoria.id === 'manos' ? (
+                    <div className="amore-services__hands-illustration" role="img" aria-label="Representación editorial del cuidado de manos y uñas">
+                      <span className="amore-services__hands-brand">AMORE</span>
+                      <Hand size={67} strokeWidth={1} aria-hidden="true" />
+                      <span className="amore-services__hands-caption">EL ARTE DE CUIDAR CADA DETALLE</span>
+                    </div>
+                  ) : (
                   <img
                     src={editorialSrc(service.image)}
                     alt={'Imagen ilustrativa de ' + service.name}
@@ -182,6 +189,7 @@ export function ServiciosSection() {
                       if (img.src !== new URL(fallback, window.location.href).href) img.src = fallback;
                     }}
                   />
+                  )}
                   <span className="amore-services__photo-caption">Imagen ilustrativa</span>
                 </div>
                 <div className="amore-services__service-body">
