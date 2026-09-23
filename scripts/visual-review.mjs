@@ -24,6 +24,16 @@ for (const size of views) {
   page.on('pageerror', error => errors.push(error.message));
   const response = await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 30_000 });
   await page.locator('#amore-hero-title').waitFor({ timeout: 15_000 });
+  // Captura comparativa del primer pantallazo (la fotografía se carga en alta prioridad).
+  await page.waitForFunction(() => {
+    const photo = document.querySelector('.amore-hero__visual img');
+    return photo && photo.complete && photo.naturalWidth > 0;
+  }, { timeout: 15_000 });
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({
+    path: output + '/' + size.name + '-hero.png',
+    fullPage: false, animations: 'disabled',
+  });
   // Desplazamiento real para activar imágenes lazy y animaciones mientras se revisa la página completa.
   await page.evaluate(async () => {
     for (let y = 0; y < document.documentElement.scrollHeight; y += Math.max(400, innerHeight - 100)) {
