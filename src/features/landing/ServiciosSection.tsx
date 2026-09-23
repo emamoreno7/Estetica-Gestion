@@ -88,10 +88,17 @@ function EditorialPhoto({ src, fallback, alt, className = '', priority = false }
   );
 }
 
-export function ServiciosSection() {
+type Props = { compactFeatured?: boolean; featuredCategory?: string | null };
+export function ServiciosSection({ compactFeatured = false, featuredCategory = null }: Props) {
   const { categorias, loading, error } = useServiciosCatalogo();
   const [activeTab, setActiveTab] = useState(serviciosCatalogo[0].id);
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (featuredCategory && categorias.some(({ id }) => id === featuredCategory)) {
+      setActiveTab(featuredCategory);
+    }
+  }, [featuredCategory, categorias]);
 
   useEffect(() => {
     if (categorias.length > 0 && !categorias.some((category) => category.id === activeTab)) {
@@ -123,7 +130,7 @@ export function ServiciosSection() {
           <p>Encontrá el cuidado que buscás. Te ayudamos a elegir un tratamiento adecuado para vos.</p>
         </div>
 
-        <div className="amore-services__featured" aria-label="Explorá los tratamientos por categoría">
+        {!compactFeatured && <div className="amore-services__featured" aria-label="Explorá los tratamientos por categoría">
           {EDITORIAL_CATEGORIES.filter((cover) => categorias.some((item) => item.id === cover.id)).map(
             (cover, index) => (
               <motion.button
@@ -147,7 +154,7 @@ export function ServiciosSection() {
               </motion.button>
             ),
           )}
-        </div>
+        </div>}
 
         <div className="amore-services__catalogue" id="amore-catalogo">
           <div className="amore-services__catalogue-heading">
