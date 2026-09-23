@@ -303,3 +303,25 @@
   .amore-hero-feature-card picture img,.amore-hero__primary,
   .amore-hero__secondary,.amore-hero__scroll {transition:none!important;}
 }
+
+
+/* Las tarjetas no deben imponer un ancho mínimo derivado de aspect-ratio.
+   En 390/320px el min-height anterior forzaba el overflow horizontal. */
+.amore-landing--editorial .amore-hero-feature-card {
+  width:100%;max-width:100%;min-width:0;height:232px;min-height:0;aspect-ratio:auto;
+}
+@media(max-width:1050px){
+  .amore-landing--editorial .amore-hero-feature-card {height:245px;}
+}
+@media(max-width:760px){
+  .amore-landing--editorial .amore-hero-feature-card {height:239px;}
+}
+@media(max-width:410px){
+  .amore-landing--editorial .amore-hero-reference h1 {
+    font-size:clamp(2.65rem,11vw,3.35rem);letter-spacing:-.075em!important;
+  }
+  .amore-hero-reference h1 em {font-size:.96em;}
+}
+@media(max-width:370px){
+  .amore-landing--editorial .amore-hero-feature-card {height:213px;}
+}
