@@ -1,0 +1,54 @@
+/* Catálogo fotográfico / Amore Premium */
+.amore-landing .amore-services { background: #fbf8f5; padding: clamp(4rem, 7vw, 7rem) 0 !important; }
+.amore-services__heading, .amore-services__catalogue-heading { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 2rem; }
+.amore-services__heading h2 { font-size: clamp(2.6rem, 4.4vw, 4.6rem); margin-top: .65rem; }
+.amore-services__heading h2 em { color: #7c9585; }
+.amore-services__heading > p, .amore-services__catalogue-heading > p { max-width: 370px; font-size: .91rem; line-height: 1.85; color: #728086; }
+.amore-services__featured { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1rem; }
+.amore-landing .amore-services__featured-card { position: relative; display: block; border: 0; padding: 0; overflow: hidden; min-height: 380px; aspect-ratio: 3/4; text-align: left; border-radius: 1rem !important; background: #e9e3dc; box-shadow: 0 14px 30px rgba(16,58,77,.07) !important; }
+.amore-services__featured-card > img { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .65s cubic-bezier(.2,.65,.3,1); }
+.amore-services__featured-card:hover > img, .amore-services__featured-card:focus-visible > img { transform: scale(1.045); }
+.amore-services__featured-shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 25%, rgba(20,32,32,.08) 47%, rgba(14,30,34,.77) 100%); }
+.amore-services__featured-info { position: absolute; z-index: 1; bottom: 1.5rem; left: 1.25rem; right: 1.25rem; display: flex; flex-direction: column; align-items: flex-start; gap: .7rem; color: #fff; }
+.amore-services__featured-eyebrow { font-size: .57rem; font-weight: 700; letter-spacing: .25em; }
+.amore-services__featured-title { font-family: 'Fraunces', Georgia, serif; font-size: clamp(1.45rem, 2vw, 2.1rem); line-height: 1.13; font-weight: 400; letter-spacing: -.025em; }
+.amore-services__featured-link { display: inline-flex; align-items: center; gap: .6rem; font-size: .71rem; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,.66); padding-bottom: .28rem; }
+.amore-services__catalogue { margin-top: clamp(4rem, 7vw, 6rem); scroll-margin-top: 110px; }
+.amore-services__catalogue-heading h3 { font-size: clamp(2rem, 3vw, 3.2rem); margin-top: .65rem; }
+.amore-services__tabs { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: 2.2rem; }
+.amore-landing .amore-services__tab { padding: .85rem 1.3rem; border: 1px solid #e7e6e0; border-radius: 999px !important; background: #fff; color: #50626a; font: 600 .67rem/1.35 'Montserrat', sans-serif; letter-spacing: .08em; box-shadow: none !important; }
+.amore-landing .amore-services__tab--active { background: #103a4d; color: #fff; border-color: #103a4d; }
+.amore-services__notice { margin: .8rem 0 1.3rem; color: #736b62; font-size: .8rem; }
+.amore-services__grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1.4rem; }
+.amore-services__service { display: flex; flex-direction: column; overflow: hidden; border: 1px solid #eee6df; border-radius: 1.1rem; background: #fff; box-shadow: 0 12px 30px rgba(16,58,77,.045); }
+.amore-services__service-visual { position: relative; aspect-ratio: 1.27/1; overflow: hidden; background: #eee6e0; }
+.amore-services__service-visual > img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s ease; }
+.amore-services__service:hover .amore-services__service-visual > img { transform: scale(1.035); }
+.amore-services__photo-caption { position: absolute; right: .8rem; bottom: .7rem; background: rgba(255,255,255,.88); color: #6d7477; border-radius: 100px; font-size: .55rem; padding: .3rem .6rem; }
+.amore-services__service-body { padding: 1.7rem; display: flex; flex: 1; flex-direction: column; }
+.amore-services__badges { display: flex; flex-wrap: wrap; gap: .4rem; min-height: 1.45rem; margin-bottom: .9rem; }
+.amore-services__badges span { border-radius: 100px; padding: .24rem .55rem; font-size: .55rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.amore-landing .amore-services__service h4 { color: #103a4d; font-family: 'Fraunces', Georgia, serif !important; font-size: 1.75rem; font-weight: 400; line-height: 1.2; letter-spacing: -.03em; }
+.amore-services__service-body > p { flex: 1; color: #748085; line-height: 1.8; font-size: .84rem; margin: 1rem 0 1.6rem; }
+.amore-services__inquiry { color: #103a4d; display: inline-flex; justify-content: space-between; align-items: center; gap: .5rem; border-top: 1px solid #eee5de; padding-top: 1rem; font-size: .72rem; font-weight: 700; }
+.amore-services__inquiry:hover { color: #6b8278; }
+.amore-services__help { text-align: center; display: flex; flex-direction: column; align-items: center; gap: .9rem; margin-top: 4rem; }
+.amore-services__help p { color: #65757a; font-size: .94rem; }
+.amore-services__help a { background: #103a4d; color: white; border-radius: 100px; display: inline-flex; align-items: center; gap: .8rem; padding: 1rem 1.5rem; font-size: .75rem; font-weight: 600; }
+.amore-services__help a:hover { background: #20536b; }
+.amore-services__featured-card:focus-visible, .amore-services__tab:focus-visible, .amore-services__inquiry:focus-visible { outline: 2px solid #ac8585; outline-offset: 4px; }
+
+@media(max-width: 970px) { .amore-services__featured { grid-template-columns: repeat(2,minmax(0,1fr)); } .amore-services__featured-card { max-height: 430px; } .amore-services__grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width: 650px) {
+ .amore-services__heading, .amore-services__catalogue-heading { flex-direction: column; align-items: flex-start; gap: 1rem; }
+ .amore-services__heading > p, .amore-services__catalogue-heading > p { max-width: 100%; }
+ .amore-services__featured { gap: .75rem; }
+ .amore-landing .amore-services__featured-card { min-height: 260px; }
+ .amore-services__featured-info { left: .9rem; right: .9rem; bottom: 1.1rem; gap: .5rem; }
+ .amore-services__featured-title { font-size: 1.4rem; }
+ .amore-services__tabs { flex-wrap: nowrap; margin-inline: -1rem; padding-inline: 1rem; overflow-x: auto; scrollbar-width: thin; }
+ .amore-landing .amore-services__tab { flex-shrink: 0; }
+ .amore-services__grid { grid-template-columns: 1fr; }
+}
+@media(max-width: 350px) { .amore-services__featured { grid-template-columns: 1fr; } }
+@media(prefers-reduced-motion:reduce) { .amore-services__featured-card > img, .amore-services__service-visual > img { transition: none; } }
