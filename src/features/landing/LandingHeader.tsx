@@ -10,12 +10,13 @@ const NAV = [
   { label: 'Inicio', href: '#inicio' },
   { label: 'Tratamientos', href: '#tratamientos' },
   { label: 'Resultados', href: '#resultados' },
-  { label: 'Nosotras', href: '#nosotras' },
+  { label: 'Nuestra esencia', href: '#nosotras' },
   { label: 'Contacto', href: '#contacto' },
 ] as const;
 
 export function LandingHeader({ onEnter }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -36,12 +37,22 @@ export function LandingHeader({ onEnter }: Props) {
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    const update = () => setScrolled((current) => {
+      const next = window.scrollY > 30;
+      return current === next ? current : next;
+    });
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55 }}
-      className="amore-header"
+      className={scrolled ? "amore-header amore-header--scrolled" : "amore-header"}
     >
       <div className="amore-container amore-header__inner">
         <a href="#inicio" className="amore-header__brand" aria-label="Amore, ir al inicio" onClick={() => setMenuOpen(false)}>
@@ -78,7 +89,7 @@ export function LandingHeader({ onEnter }: Props) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <CalendarDays size={16} aria-hidden="true" /> Reservar cita
+            <CalendarDays size={16} aria-hidden="true" /> Reservar turno
           </a>
           <button
             className="amore-header__menu"

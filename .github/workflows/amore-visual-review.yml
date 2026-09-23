@@ -2,7 +2,7 @@ name: Amore Premium visual review
 
 on:
   push:
-    branches: [redesign/amore-premium, redesign/amore-phase2]
+    branches: [redesign/amore-premium, redesign/amore-phase2, redesign/amore-hero-reference]
     paths:
       - 'scripts/visual-review.mjs'
       - 'src/App.tsx'
@@ -11,6 +11,8 @@ on:
       - 'public/editorial/**'
       - 'src/features/landing/**'
       - 'public/amore-hero.webp'
+      - 'public/hero-editorial-*.webp'
+      - 'scripts/optimize-hero.py'
       - '.github/workflows/amore-visual-review.yml'
   workflow_dispatch: {}
 

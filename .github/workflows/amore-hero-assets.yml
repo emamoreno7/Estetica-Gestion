@@ -1,0 +1,57 @@
+name: Amore - Hero editorial responsive
+on:
+  push:
+    branches: [redesign/amore-hero-reference]
+    paths:
+      - 'scripts/.hero-source/READY'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: amore-hero-assets
+  cancel-in-progress: false
+jobs:
+  build-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: redesign/amore-hero-reference
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Reconstruir fotografía maestra
+        run: |
+          cat scripts/.hero-source/part*.b64 | base64 -d > public/hero-editorial-source.webp
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import hashlib
+          p=Path('public/hero-editorial-source.webp')
+          expected='6e30e4202987ba8f36e272605e889a81db22c42acf97b48502dedc0fe774d916'
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual == expected, (actual, expected)
+          im=Image.open(p)
+          im.verify()
+          print('hero fuente verificado:', p.stat().st_size, 'bytes', actual)
+          PY
+      - name: Procesar fotografía aprobada
+        run: python scripts/optimize-hero.py
+      - name: Validar y publicar variantes WebP
+        run: |
+          test -s public/hero-editorial-768.webp
+          test -s public/hero-editorial-1280.webp
+          test -s public/hero-editorial-1920.webp
+          test -s public/hero-editorial-mobile.webp
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -f scripts/.hero-source/READY scripts/.hero-source/part*.b64
+          git add public/hero-editorial-source.webp public/hero-editorial-768.webp public/hero-editorial-1280.webp public/hero-editorial-1920.webp public/hero-editorial-mobile.webp
+          if ! git diff --cached --quiet; then
+            git commit -m 'assets(hero): generar cuatro versiones WebP responsive'
+            git pull --rebase origin redesign/amore-hero-reference
+            git push origin HEAD:redesign/amore-hero-reference
+          fi

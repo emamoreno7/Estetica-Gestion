@@ -24,6 +24,16 @@ for (const size of views) {
   page.on('pageerror', error => errors.push(error.message));
   const response = await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 30_000 });
   await page.locator('#amore-hero-title').waitFor({ timeout: 15_000 });
+  // Captura comparativa del primer pantallazo (la fotografía se carga en alta prioridad).
+  await page.waitForFunction(() => {
+    const photo = document.querySelector('.amore-hero__visual img');
+    return photo && photo.complete && photo.naturalWidth > 0;
+  }, { timeout: 15_000 });
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({
+    path: output + '/' + size.name + '-hero.png',
+    fullPage: false, animations: 'disabled',
+  });
   // Desplazamiento real para activar imágenes lazy y animaciones mientras se revisa la página completa.
   await page.evaluate(async () => {
     for (let y = 0; y < document.documentElement.scrollHeight; y += Math.max(400, innerHeight - 100)) {
@@ -57,9 +67,10 @@ for (const size of views) {
       heroRect: rect && { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
       headerRect: h && { x: h.x, y: h.y, width: h.width, height: h.height },
       catalogueCardCount: document.querySelectorAll('.amore-services__service').length,
-      catalogueCoverCount: document.querySelectorAll('.amore-services__featured-card').length,
+      catalogueCoverCount: document.querySelectorAll('.amore-hero-feature-card').length,
       missingImages: Array.from(document.querySelectorAll('img')).filter(img => img.complete && !img.naturalWidth).map(img => img.src),
       heroFont: getComputedStyle(document.querySelector('#amore-hero-title')).fontFamily,
+      heroText: document.querySelector('#amore-hero-title')?.innerText || '',
       horizontalOffenders: Array.from(document.querySelectorAll('body *')).map(el => ({ el, rect: el.getBoundingClientRect() })).filter(({el, rect}) => rect.width > 0 && (rect.right > innerWidth + 1 || rect.left < -1) && getComputedStyle(el).position !== 'fixed').slice(0, 30).map(({el, rect}) => ({tag: el.tagName, className: String(el.className).slice(0,90), text: el.textContent?.trim().slice(0,55), left: Math.round(rect.left), right: Math.round(rect.right), width: Math.round(rect.width)})),
     };
   });
@@ -86,14 +97,24 @@ for (const size of views) {
     handsCards = await page.locator('.amore-services__service').count();
     await tabs.first().click();
   }
+  // Las portadas del hero deben seleccionar la categoría real del catálogo.
+  const feature = page.locator('.amore-hero-feature-card[href="#amore-catalogo"]');
+  const featuredCount = await feature.count();
+  let categoryNavigation = null;
+  if (featuredCount === 4) {
+    await feature.nth(1).click();
+    categoryNavigation = await page.locator('.amore-services__tab[aria-pressed="true"]').innerText();
+  }
   const result = {
+    featuredCount, categoryNavigation,
     viewport: size.name, httpStatus: response?.status(), ...check,
     mobileMenu, escapedMenu, bookingOk, handsCards, initialMetrics, errors
   };
   console.log(JSON.stringify(result));
   report.push(result);
   if (result.documentWidth > size.width + 2 || !result.heroImageLoaded || result.httpStatus !== 200 ||
-      !bookingOk || (handsAvailable && !handsCards) ||
+      !bookingOk || featuredCount !== 4 || !/facial/i.test(categoryNavigation || '') ||
+      !result.heroText.includes('nuestro arte') || (handsAvailable && !handsCards) ||
       (size.width <= 760 && (!mobileMenu || !escapedMenu)) || errors.length) failed = true;
   // Comprobación sin credenciales de las rutas lazy y sus puertas de acceso.
   // Sólo en desktop para mantener la revisión ligera.
