@@ -25,12 +25,14 @@ jobs:
       - name: Instalar Lighthouse CI
         run: npm install --no-save @lhci/cli@0.15.1
       - name: Compilar para Pages
-        run: npm run build:pages
+        run: npm run build:domain
+      - name: Verify custom domain
+        run: npm run verify:domain
       - name: Preview local
         run: |
-          npm run preview -- --host 127.0.0.1 --port 4173 --base /Estetica-Gestion/ > /tmp/amore-lighthouse-preview.log 2>&1 &
+          npm run preview -- --host 127.0.0.1 --port 4173 --base / > /tmp/amore-lighthouse-preview.log 2>&1 &
           for i in $(seq 1 45); do
-            if curl -fsS http://127.0.0.1:4173/Estetica-Gestion/ > /dev/null; then exit 0; fi
+            if curl -fsS http://127.0.0.1:4173/ > /dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/amore-lighthouse-preview.log

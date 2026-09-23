@@ -32,14 +32,17 @@ jobs:
 
       - name: Build (Pages)
         env:
-          # El sitio se sirve en https://<user>.github.io/Estetica-Gestion/
-          VITE_BASE_PATH: /Estetica-Gestion/
+          # Dominio personalizado en Pages: https://amore.bydotcom.com/
+          VITE_BASE_PATH: /
           # Secrets configurados en Settings → Secrets and variables → Actions
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_ADMIN_EMAILS: ${{ secrets.VITE_ADMIN_EMAILS }}
           VITE_ADMIN_USER_IDS: ${{ secrets.VITE_ADMIN_USER_IDS }}
-        run: npm run build
+        run: npm run build:domain
+
+      - name: Verify custom-domain build
+        run: npm run verify:domain
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

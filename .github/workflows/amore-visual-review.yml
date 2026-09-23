@@ -1,13 +1,22 @@
 name: Amore Premium visual review
 
 on:
+  pull_request:
+    branches: [main]
   push:
-    branches: [redesign/amore-premium, redesign/amore-phase2]
+    branches: [infra/amore-custom-domain]
     paths:
       - 'scripts/visual-review.mjs'
       - 'src/App.tsx'
       - 'src/features/auth/ClientSignupPage.tsx'
       - 'index.html'
+      - 'public/404.html'
+      - 'public/CNAME'
+      - 'public/sitemap.xml'
+      - 'public/robots.txt'
+      - 'package.json'
+      - 'vite.config.ts'
+      - '.github/workflows/deploy-pages.yml'
       - 'public/editorial/**'
       - 'src/features/landing/**'
       - 'public/amore-hero.webp'
@@ -30,18 +39,22 @@ jobs:
       - run: npm ci
       - run: npm install --no-save playwright@1.55.0
       - run: npx playwright install --with-deps chromium
-      - name: Build for GitHub Pages
-        run: npm run build:pages
+      - name: Build for custom domain
+        run: npm run build:domain
+      - name: Verify custom domain
+        run: npm run verify:domain
       - name: Start local preview
         run: |
-          npm run preview -- --host 127.0.0.1 --port 4173 --base /Estetica-Gestion/ > /tmp/amore-preview.log 2>&1 &
+          npm run preview -- --host 127.0.0.1 --port 4173 --base / > /tmp/amore-preview.log 2>&1 &
           for i in $(seq 1 50); do
-            if curl -fsS http://127.0.0.1:4173/Estetica-Gestion/ > /dev/null; then exit 0; fi
+            if curl -fsS http://127.0.0.1:4173/ > /dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/amore-preview.log
           exit 1
       - name: Responsive screenshots and smoke checks
+        env:
+          AMORE_PREVIEW_URL: http://127.0.0.1:4173/
         run: node scripts/visual-review.mjs
       - name: Upload review artifacts
         if: always()

@@ -9,7 +9,10 @@
     "build:pages": "VITE_BASE_PATH=/Estetica-Gestion/ vite build",
     "build:singlefile": "VITE_SINGLE_FILE=1 vite build",
     "preview": "vite preview",
-    "preview:pages": "VITE_BASE_PATH=/Estetica-Gestion/ vite build && vite preview --base /Estetica-Gestion/"
+    "preview:pages": "VITE_BASE_PATH=/Estetica-Gestion/ vite build && vite preview --base /Estetica-Gestion/",
+    "build:domain": "VITE_BASE_PATH=/ vite build",
+    "preview:domain": "VITE_BASE_PATH=/ vite build && vite preview --base /",
+    "verify:domain": "node scripts/verify-domain-build.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
