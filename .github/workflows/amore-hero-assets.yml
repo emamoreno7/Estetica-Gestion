@@ -1,0 +1,43 @@
+name: Amore - Hero editorial responsive
+on:
+  push:
+    branches: [redesign/amore-hero-reference]
+    paths:
+      - 'public/hero-editorial-source.webp'
+      - 'scripts/optimize-hero.py'
+      - '.github/workflows/amore-hero-assets.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: amore-hero-assets
+  cancel-in-progress: false
+jobs:
+  build-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: redesign/amore-hero-reference
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Procesar fotografía aprobada
+        run: python scripts/optimize-hero.py
+      - name: Validar y publicar variantes WebP
+        run: |
+          test -s public/hero-editorial-768.webp
+          test -s public/hero-editorial-1280.webp
+          test -s public/hero-editorial-1920.webp
+          test -s public/hero-editorial-mobile.webp
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/hero-editorial-768.webp public/hero-editorial-1280.webp public/hero-editorial-1920.webp public/hero-editorial-mobile.webp
+          if ! git diff --cached --quiet; then
+            git commit -m 'assets(hero): generar cuatro versiones WebP responsive'
+            git pull --rebase origin redesign/amore-hero-reference
+            git push origin HEAD:redesign/amore-hero-reference
+          fi
