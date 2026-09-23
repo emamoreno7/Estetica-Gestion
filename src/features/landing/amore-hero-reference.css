@@ -325,3 +325,17 @@
 @media(max-width:370px){
   .amore-landing--editorial .amore-hero-feature-card {height:213px;}
 }
+
+
+/* Afinación visual del mockup aprobado: márgenes proporcionales, no saltos
+   bruscos de posición del título entre 1440px y 1536px. */
+@media(min-width:1251px){
+  .amore-hero-reference .amore-hero__inner {
+    width:min(1298px,calc(100% - 15.6vw));
+  }
+  .amore-hero-reference .amore-hero__overlay {
+    background:
+      linear-gradient(270deg,rgba(255,249,245,.68),rgba(255,249,245,.24) 13%,transparent 24%),
+      linear-gradient(90deg,rgba(255,251,247,.9),rgba(255,249,246,.78) 24%,rgba(255,249,246,.55) 38%,rgba(255,249,246,.14) 55%,transparent 73%);
+  }
+}
