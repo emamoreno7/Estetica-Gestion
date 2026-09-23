@@ -199,11 +199,15 @@ begin
   if char_length(v_needle) < 2 or char_length(v_needle) > 80 then
     return;
   end if;
+  -- Buscar texto literal: %, _ y barra invertida no deben permitir
+  -- enumerar todo el directorio mediante comodines de ILIKE.
+  v_needle := replace(replace(replace(v_needle, chr(92), chr(92)||chr(92)),
+    '%', chr(92)||'%'), '_', chr(92)||'_');
   return query
     select pc.id, coalesce(pc.full_name,''), coalesce(pc.phone,'')
     from public.perfiles_clientes pc
-    where pc.full_name ilike '%' || v_needle || '%'
-       or pc.phone ilike '%' || v_needle || '%'
+    where pc.full_name ilike '%' || v_needle || '%' escape chr(92)
+       or pc.phone ilike '%' || v_needle || '%' escape chr(92)
     order by pc.full_name asc
     limit 30;
 end;
