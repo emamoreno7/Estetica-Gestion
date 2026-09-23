@@ -46,6 +46,9 @@ medicion_id = str(uuid.uuid4())
 with connect_as(STAFF) as staff:
     assert fetch_one(staff,"select public.puede_registrar_mediciones()") is True
     assert fetch_one(staff,"select count(*) from public.buscar_clientes_para_mediciones('Mar')") == 1
+    assert fetch_one(staff,"select count(*) from public.buscar_clientes_para_mediciones('%%')") == 0
+    assert fetch_one(staff,"select count(*) from public.buscar_clientes_para_mediciones('__')") == 0
+    assert fetch_one(staff,"select count(*) from public.mediciones_auditoria") == 0
     assert_denied(lambda:fetch_one(staff,"select count(*) from public.perfiles_clientes"))
     with staff.cursor() as cur:
         cur.execute("""insert into public.mediciones_corporales
