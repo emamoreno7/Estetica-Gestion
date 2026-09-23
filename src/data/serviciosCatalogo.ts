@@ -56,6 +56,13 @@ export const serviciosCatalogo: ServicioCategoria[] = [
         image: '/electrodo.png',
         illustration: 'electrodos',
       },
+      {
+        name: 'Cavitación 40k y Vacuum',
+        desc: 'Ultrasonido de 40 kHz y succión vacuum para acompañar la reducción localizada y el drenaje, con un protocolo Amore preciso y respetuoso.',
+        badges: ['Reductor', 'Drenante'],
+        image: '/presoterapia.png',
+        illustration: 'presoterapia',
+      },
     ],
   },
   {
