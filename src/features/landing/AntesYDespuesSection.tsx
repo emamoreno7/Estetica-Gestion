@@ -71,6 +71,13 @@ const CASOS: Caso[] = [
   },
 ];
 
+function responsiveCaseSrcSet(src: string): string {
+  return [
+    src.replace(/\.webp$/, '-480.webp') + ' 480w',
+    src.replace(/\.webp$/, '-800.webp') + ' 800w',
+  ].join(', ');
+}
+
 export function AntesYDespuesSection() {
   const [idx, setIdx] = useState(0);
   const caso = CASOS[idx];
@@ -109,7 +116,7 @@ export function AntesYDespuesSection() {
         >
           <p
             className="mb-3 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.38em]"
-            style={{ color: 'var(--accent-sage)' }}
+            style={{ color: '#536e61' }}
           >
             <Sparkles className="h-3 w-3" />
             Resultados reales
@@ -146,6 +153,9 @@ export function AntesYDespuesSection() {
             <BeforeAfterSlider
               beforeSrc={caso.beforeSrc}
               afterSrc={caso.afterSrc}
+              beforeSrcSet={responsiveCaseSrcSet(caso.beforeSrc)}
+              afterSrcSet={responsiveCaseSrcSet(caso.afterSrc)}
+              imageSizes="(max-width: 760px) calc(100vw - 2rem), 650px"
               beforeLabel="ANTES"
               afterLabel="DESPUÉS"
             />
@@ -165,14 +175,19 @@ export function AntesYDespuesSection() {
                     key={c.slug}
                     type="button"
                     onClick={() => setIdx(i)}
-                    className="h-2 rounded-full transition-all"
-                    style={{
-                      width: i === idx ? 28 : 8,
-                      background:
-                        i === idx ? 'var(--primary-navy)' : 'rgba(0,61,91,0.20)',
-                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-full transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                    aria-current={i === idx ? 'true' : undefined}
                     aria-label={`Ver caso ${i + 1}`}
-                  />
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="block h-2 rounded-full"
+                      style={{
+                        width: i === idx ? 26 : 8,
+                        background: i === idx ? 'var(--primary-navy)' : 'rgba(0,61,91,0.3)',
+                      }}
+                    />
+                  </button>
                 ))}
               </div>
               <button
@@ -196,7 +211,7 @@ export function AntesYDespuesSection() {
           >
             <p
               className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em]"
-              style={{ color: 'var(--accent-sage)' }}
+              style={{ color: '#536e61' }}
             >
               {caso.tratamiento}
             </p>
