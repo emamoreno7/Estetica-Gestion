@@ -38,6 +38,18 @@ const EDITORIAL_CATEGORIES = [
   },
 ] as const;
 
+function responsiveEditorialSrcSet(path: string): string | undefined {
+  // Sólo las fotografías alojadas en el catálogo editorial público.
+  const match = path.match(/(?:^|\/)editorial\/([a-z0-9-]+)\.webp$/i);
+  if (!match) return undefined;
+  const stem = match[1].toLowerCase();
+  return [
+    asset('editorial/' + stem + '-240.webp') + ' 240w',
+    asset('editorial/' + stem + '-480.webp') + ' 480w',
+    asset('editorial/' + stem + '.webp') + ' 760w',
+  ].join(', ');
+}
+
 function editorialSrc(original: string) {
   if (!original || /^(https?:|blob:|data:)/i.test(original)) return original;
   const match = original.match(/^\/?([a-z0-9-]+)\.(?:png|jpe?g)$/i);
@@ -57,6 +69,8 @@ function EditorialPhoto({ src, fallback, alt, className = '', priority = false }
     <img
       className={className}
       src={asset(src)}
+      srcSet={responsiveEditorialSrcSet(asset(src))}
+      sizes="(max-width: 650px) 45vw, (max-width: 970px) 45vw, 24vw"
       alt={alt}
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
@@ -65,7 +79,10 @@ function EditorialPhoto({ src, fallback, alt, className = '', priority = false }
       onError={(event) => {
         const img = event.currentTarget;
         const backup = asset(fallback);
-        if (img.src !== new URL(backup, window.location.href).href) img.src = backup;
+        if (img.src !== new URL(backup, window.location.href).href) {
+          img.srcset = '';
+          img.src = backup;
+        }
       }}
     />
   );
@@ -118,7 +135,7 @@ export function ServiciosSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.55, delay: index * 0.06 }}
-                aria-label={'Ver tratamientos de ' + cover.eyebrow.toLowerCase()}
+                aria-label={'Descubrir ' + cover.eyebrow.toLowerCase() + ': ver tratamientos'}
               >
                 <EditorialPhoto src={cover.image} fallback={cover.fallback} alt="" />
                 <span className="amore-services__featured-shade" aria-hidden="true" />
@@ -178,6 +195,8 @@ export function ServiciosSection() {
                   ) : (
                   <img
                     src={editorialSrc(service.image)}
+                    srcSet={responsiveEditorialSrcSet(editorialSrc(service.image))}
+                    sizes="(max-width: 650px) calc(100vw - 2rem), (max-width: 970px) 46vw, 30vw"
                     alt={'Imagen ilustrativa de ' + service.name}
                     width="720"
                     height="810"
@@ -186,7 +205,10 @@ export function ServiciosSection() {
                     onError={(event) => {
                       const img = event.currentTarget;
                       const fallback = asset(service.image || '/body-up.png');
-                      if (img.src !== new URL(fallback, window.location.href).href) img.src = fallback;
+                      if (img.src !== new URL(fallback, window.location.href).href) {
+                        img.srcset = '';
+                        img.src = fallback;
+                      }
                     }}
                   />
                   )}
@@ -213,7 +235,7 @@ export function ServiciosSection() {
                     href={buildWhatsAppHref(service.name)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={'Consultar por WhatsApp sobre ' + service.name}
+                    aria-label={'Consultar tratamiento por WhatsApp: ' + service.name}
                   >
                     Consultar tratamiento <ArrowRight size={17} aria-hidden="true" />
                   </a>

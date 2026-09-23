@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+
 import { Heart, Leaf, ShieldCheck, Sparkles } from 'lucide-react';
 
 import { WhatsAppFloatingButton } from '@/components/WhatsAppFloatingButton';
@@ -29,7 +29,7 @@ const VALUES = [
 const VirtualAssistantChat = lazy(() => import('@/components/VirtualAssistantChat'));
 
 export function LandingPage({ onEnter, onRegister }: Props) {
-  const reduceMotion = useReducedMotion();
+
   const [showFloatingContact, setShowFloatingContact] = useState(false);
   const [showDesktopAssistant, setShowDesktopAssistant] = useState(false);
 
@@ -87,12 +87,7 @@ export function LandingPage({ onEnter, onRegister }: Props) {
           </div>
           <div className="amore-hero__overlay" aria-hidden="true" />
           <div className="amore-container amore-hero__inner">
-            <motion.div
-              className="amore-hero__copy"
-              initial={reduceMotion ? false : { opacity: 0, y: 22 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            >
+            <div className="amore-hero__copy">
               <p className="amore-eyebrow">Belleza · Bienestar · Confianza</p>
               <h1 id="amore-hero-title">Tu bienestar,<br /><em>elevado a arte.</em></h1>
               <p className="amore-hero__description">
@@ -112,7 +107,7 @@ export function LandingPage({ onEnter, onRegister }: Props) {
                   <li key={label}><Icon size={21} strokeWidth={1.4} aria-hidden="true" /><span>{label}</span></li>
                 ))}
               </ul>
-            </motion.div>
+            </div>
           </div>
         </section>
 

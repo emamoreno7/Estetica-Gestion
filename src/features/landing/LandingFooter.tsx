@@ -53,7 +53,7 @@ export function LandingFooter() {
         <div className="amore-footer__bottom">
           <p>© {new Date().getFullYear()} Amore Centro di Bellezza. Todos los derechos reservados.</p>
           <a className="amore-footer__credit" href="https://www.bydotcom.com/"
-            target="_blank" rel="noopener noreferrer" aria-label="Sitio de DotCom Desarrollo Digital">
+            target="_blank" rel="noopener noreferrer" aria-label="Desarrollado por DotCom Desarrollo Digital: visitar su sitio web">
             <span>Desarrollado por</span>
             <img src={asset('editorial/bydotcom-mark.webp')}
               onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = asset('bydotcom-logo.png'); }} alt="" width="23" height="23" loading="lazy" decoding="async" />
