@@ -1,7 +1,18 @@
-import { Instagram, Mail, MapPin, MessageCircle } from 'lucide-react';
+import { Mail, MapPin, MessageCircle } from 'lucide-react';
 import { asset } from '@/lib/asset';
 import { buildWhatsAppHref } from '@/lib/whatsapp';
 import './amore-footer.css';
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
+      stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r=".6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 const ADDRESS = 'Wenceslao Núñez 735, Rivadavia, Mendoza';
 
@@ -12,7 +23,8 @@ export function LandingFooter() {
         <div className="amore-footer__main">
           <div className="amore-footer__brand">
             <a href="#inicio" aria-label="Amore, volver al inicio">
-              <img src={asset('logo-amore-v2.png')} alt="Amore Centro di Bellezza" loading="lazy" width="110" height="110" decoding="async" />
+              <img src={asset('editorial/amore-mark.webp')}
+                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = asset('logo-amore-v2.png'); }} alt="Amore Centro di Bellezza" loading="lazy" width="110" height="110" decoding="async" />
             </a>
             <p>Un espacio para dedicarte tiempo, cuidarte y disfrutar de tu propia belleza.</p>
           </div>
@@ -34,7 +46,7 @@ export function LandingFooter() {
               <MessageCircle size={15} aria-hidden="true" /> WhatsApp
             </a>
             <a href="https://instagram.com/amorecentrodibellezza" target="_blank" rel="noopener noreferrer">
-              <Instagram size={15} aria-hidden="true" /> Instagram
+              <InstagramIcon /> Instagram
             </a>
           </div>
         </div>
@@ -43,7 +55,8 @@ export function LandingFooter() {
           <a className="amore-footer__credit" href="https://www.bydotcom.com/"
             target="_blank" rel="noopener noreferrer" aria-label="Sitio de DotCom Desarrollo Digital">
             <span>Desarrollado por</span>
-            <img src={asset('bydotcom-logo.png')} alt="" width="23" height="23" loading="lazy" decoding="async" />
+            <img src={asset('editorial/bydotcom-mark.webp')}
+              onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = asset('bydotcom-logo.png'); }} alt="" width="23" height="23" loading="lazy" decoding="async" />
             <strong>DotCom</strong>
           </a>
           <a className="amore-footer__dev-contact" href="mailto:emamoreno@icloud.com"

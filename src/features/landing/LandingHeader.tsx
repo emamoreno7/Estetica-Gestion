@@ -45,7 +45,8 @@ export function LandingHeader({ onEnter }: Props) {
     >
       <div className="amore-container amore-header__inner">
         <a href="#inicio" className="amore-header__brand" aria-label="Amore, ir al inicio" onClick={() => setMenuOpen(false)}>
-          <img src={asset('logo-amore-v2.png')} alt="Amore Centro di Bellezza" width="70" height="70" />
+          <img src={asset('editorial/amore-mark.webp')}
+            onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = asset('logo-amore-v2.png'); }} alt="Amore Centro di Bellezza" width="70" height="70" />
         </a>
 
         <nav
