@@ -89,7 +89,7 @@
 .amore-closing__inner { display: flex; justify-content: space-between; align-items: center; gap: 2rem; }
 .amore-closing h2 { font-size: clamp(2rem, 3.2vw, 3.5rem); margin: .5rem 0 .7rem; }
 .amore-closing h2 em { color: #668079; }
-.amore-closing p:not(.amore-eyebrow) { color: #69767a; line-height: 1.7; font-size: .88rem; }
+.amore-closing p:not(.amore-eyebrow) { color: #4f6266; line-height: 1.7; font-size: .88rem; }
 
 @media (max-width: 1050px) {
   .amore-header__nav { gap: .9rem; }
