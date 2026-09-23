@@ -1,0 +1,11 @@
+# Sólo la portada pública es indexable; el portal y la gestión son privados.
+User-agent: *
+Allow: /Estetica-Gestion/
+Disallow: /Estetica-Gestion/portal
+Disallow: /Estetica-Gestion/admin
+Disallow: /Estetica-Gestion/ingreso
+Disallow: /Estetica-Gestion/unete
+Disallow: /Estetica-Gestion/acceso
+Sitemap: https://emamoreno7.github.io/Estetica-Gestion/sitemap.xml
+# Nota: GitHub Pages sirve el robots.txt global desde la raíz del dominio;
+# este archivo será efectivo en raíz al usar dominio propio.

@@ -58,7 +58,8 @@ export function ConversionSection({ onRegister }: { onRegister: () => void }) {
           <div className="amore-private__phone" aria-hidden="true">
             <div className="amore-private__phone-speaker" />
             <div className="amore-private__phone-header">
-              <img src={asset('logo-amore-v2.png')} alt="" width="46" height="46" />
+              <img src={asset('editorial/amore-mark.webp')}
+                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = asset('logo-amore-v2.png'); }} alt="" width="46" height="46" />
               <div>
                 <p>AMORE</p>
                 <span>Tu espacio personal</span>

@@ -1,0 +1,46 @@
+name: Amore Phase 2 - Lighthouse
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'lighthouserc.cjs'
+      - '.github/workflows/amore-lighthouse.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Instalar Lighthouse CI
+        run: npm install --no-save @lhci/cli@0.15.1
+      - name: Compilar para Pages
+        run: npm run build:pages
+      - name: Preview local
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 --base /Estetica-Gestion/ > /tmp/amore-lighthouse-preview.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4173/Estetica-Gestion/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/amore-lighthouse-preview.log
+          exit 1
+      - name: Lighthouse móvil
+        run: npx lhci autorun
+      - name: Informes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: amore-lighthouse
+          path: lighthouse-results/
+          retention-days: 7

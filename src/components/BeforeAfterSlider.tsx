@@ -5,6 +5,9 @@ import { GripHorizontal } from 'lucide-react';
 interface Props {
   beforeSrc: string;
   afterSrc: string;
+  beforeSrcSet?: string;
+  afterSrcSet?: string;
+  imageSizes?: string;
   beforeLabel?: string;
   afterLabel?: string;
 }
@@ -12,6 +15,9 @@ interface Props {
 export default function BeforeAfterSlider({
   beforeSrc,
   afterSrc,
+  beforeSrcSet,
+  afterSrcSet,
+  imageSizes,
   beforeLabel = 'ANTES',
   afterLabel = 'DESPUÉS',
 }: Props) {
@@ -54,6 +60,9 @@ export default function BeforeAfterSlider({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      role="group"
+      aria-label="Comparador fotográfico antes y después"
       className="ba-slider-container relative w-full overflow-hidden rounded-2xl"
       style={{ aspectRatio: '16 / 10' }}
     >
@@ -61,6 +70,10 @@ export default function BeforeAfterSlider({
       <div className="absolute inset-0">
         <img
           src={afterSrc}
+          srcSet={afterSrcSet}
+          sizes={imageSizes}
+          loading="lazy"
+          decoding="async"
           alt={afterLabel}
           className="h-full w-full object-cover"
           draggable={false}
@@ -74,6 +87,10 @@ export default function BeforeAfterSlider({
       >
         <img
           src={beforeSrc}
+          srcSet={beforeSrcSet}
+          sizes={imageSizes}
+          loading="lazy"
+          decoding="async"
           alt={beforeLabel}
           className="h-full w-full object-cover"
           draggable={false}
@@ -94,6 +111,24 @@ export default function BeforeAfterSlider({
         {/* Handle */}
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div
+            role="slider"
+            tabIndex={0}
+            aria-label="Comparar fotos antes y después"
+            aria-valuemin={3}
+            aria-valuemax={97}
+            aria-valuenow={Math.round(position)}
+            aria-valuetext={Math.round(position) + ' por ciento de la fotografía anterior visible'}
+            onKeyDown={(event) => {
+              let next = position;
+              if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next -= 5;
+              else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next += 5;
+              else if (event.key === 'Home') next = 3;
+              else if (event.key === 'End') next = 97;
+              else return;
+              event.preventDefault();
+              setHasInteracted(true);
+              setPosition(Math.min(97, Math.max(3, next)));
+            }}
             animate={{
               scale: dragging ? 1.18 : 1,
               boxShadow: dragging
@@ -101,7 +136,7 @@ export default function BeforeAfterSlider({
                 : '0 0 12px rgba(255,255,255,0.3), 0 4px 16px rgba(0,0,0,0.1)',
             }}
             transition={{ duration: 0.15 }}
-            className="flex h-12 w-12 items-center justify-center rounded-full border-[3px] border-white bg-gradient-to-br from-[#d4a574] via-[#c9b99a] to-[#b8a88a] shadow-2xl"
+            className="flex h-12 w-12 cursor-ew-resize items-center justify-center rounded-full border-[3px] border-white bg-gradient-to-br from-[#d4a574] via-[#c9b99a] to-[#b8a88a] shadow-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#103a4d]"
           >
             <GripHorizontal className="h-5 w-5 text-white drop-shadow-sm" />
           </motion.div>

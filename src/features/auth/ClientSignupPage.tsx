@@ -12,7 +12,7 @@ export default function ClientSignupPage() {
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: '#FDF8F5' }}>
       <div className="absolute inset-0">
-        <img src={asset('masajesr.png')} alt="" className="h-full w-full object-cover" />
+        <img src={asset('editorial/masajesr.webp')} alt="" className="h-full w-full object-cover" />
         <div
           className="absolute inset-0"
           style={{

@@ -4,6 +4,7 @@
   --amore-sage: #82978b;
   --amore-blush: #f1dbd8;
   --amore-ivory: #fbf8f5;
+  --text-muted: #555f61;
   color: var(--amore-ink);
   background: var(--amore-ivory);
   font-family: 'Montserrat', system-ui, sans-serif;
@@ -24,7 +25,7 @@
 .amore-landing a { text-decoration: none; }
 .amore-container { width: min(1200px, calc(100% - 3rem)); margin-inline: auto; }
 .amore-anchor, .amore-landing section[id] { scroll-margin-top: 100px; }
-.amore-eyebrow { font: 600 0.65rem/1.5 'Montserrat', sans-serif; letter-spacing: .28em; text-transform: uppercase; color: #72867b; }
+.amore-eyebrow { font: 600 0.65rem/1.5 'Montserrat', sans-serif; letter-spacing: .28em; text-transform: uppercase; color: #4b695b; }
 
 .amore-skip-link { position: fixed; z-index: 100; top: -100px; left: 1rem; padding: .85rem 1.2rem; background: var(--amore-ink); color: white; border-radius: .5rem; }
 .amore-skip-link:focus { top: 1rem; }
@@ -74,11 +75,11 @@
 .amore-experience__intro { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 2.2rem; }
 .amore-experience__intro h2 { font-size: clamp(2.4rem, 4vw, 4.2rem); margin-top: .65rem; }
 .amore-experience__intro h2 em { color: #82988c; }
-.amore-experience__description { max-width: 400px; color: #647078; line-height: 1.9; font-size: .92rem; }
+.amore-experience__description { max-width: 400px; color: #52646a; line-height: 1.9; font-size: .92rem; }
 .amore-experience__grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1rem; }
 .amore-experience__card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 2rem 1.25rem; border: 1px solid #ede5df; background: #fffdfc; border-radius: 1rem; min-height: 230px; box-shadow: 0 8px 30px rgba(16,58,77,.035); }
 .amore-experience__card h3 { font-size: 1.25rem; letter-spacing: -.025em !important; margin: 1.15rem 0 .6rem; }
-.amore-experience__card p { font-size: .77rem; line-height: 1.75; color: #758087; }
+.amore-experience__card p { font-size: .77rem; line-height: 1.75; color: #50636b; }
 .amore-experience__icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 50%; color: #56716c; }
 .amore-experience__icon--sage { background: #e8eeea; }
 .amore-experience__icon--rose { background: #f7e8e7; }
@@ -88,7 +89,7 @@
 .amore-closing__inner { display: flex; justify-content: space-between; align-items: center; gap: 2rem; }
 .amore-closing h2 { font-size: clamp(2rem, 3.2vw, 3.5rem); margin: .5rem 0 .7rem; }
 .amore-closing h2 em { color: #668079; }
-.amore-closing p:not(.amore-eyebrow) { color: #69767a; line-height: 1.7; font-size: .88rem; }
+.amore-closing p:not(.amore-eyebrow) { color: #4f6266; line-height: 1.7; font-size: .88rem; }
 
 @media (max-width: 1050px) {
   .amore-header__nav { gap: .9rem; }
@@ -129,4 +130,19 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .amore-landing *, .amore-landing *::before, .amore-landing *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+
+
+/* Phase 2: interacciones finas sólo para dispositivos con puntero preciso. */
+@media (hover:hover) and (pointer:fine) {
+  .amore-header__brand img { transition:transform .3s ease,filter .3s ease; }
+  .amore-header__brand:hover img { transform:scale(1.035); filter:drop-shadow(0 2px 8px rgba(16,58,77,.09)); }
+  .amore-experience__card { transition:transform .32s ease, box-shadow .32s ease, border-color .32s ease; }
+  .amore-experience__card:hover { transform:translateY(-3px); border-color:#e8d7cd; box-shadow:0 13px 36px rgba(16,58,77,.075); }
+}
+.amore-landing .amore-link:active { transform:translateY(0); }
+.amore-landing :focus-visible { outline-color:#9c7774; }
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto!important; }
+  .amore-header__brand img,.amore-experience__card { transition:none!important; }
 }

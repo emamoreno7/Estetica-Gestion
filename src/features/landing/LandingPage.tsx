@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { lazy, Suspense, useEffect, useState } from 'react';
+
 import { Heart, Leaf, ShieldCheck, Sparkles } from 'lucide-react';
-import VirtualAssistantChat from '@/components/VirtualAssistantChat';
+
 import { WhatsAppFloatingButton } from '@/components/WhatsAppFloatingButton';
 import { buildWhatsAppHref } from '@/lib/whatsapp';
 import { asset } from '@/lib/asset';
@@ -26,23 +26,45 @@ const VALUES = [
   { icon: Sparkles, label: 'Innovación' },
 ] as const;
 
+const VirtualAssistantChat = lazy(() => import('@/components/VirtualAssistantChat'));
+
 export function LandingPage({ onEnter, onRegister }: Props) {
-  const reduceMotion = useReducedMotion();
+
   const [showFloatingContact, setShowFloatingContact] = useState(false);
   const [showDesktopAssistant, setShowDesktopAssistant] = useState(false);
 
   useEffect(() => {
-    const update = () => {
-      const desktop = window.innerWidth > 760;
-      setShowDesktopAssistant(desktop);
-      setShowFloatingContact(desktop || window.scrollY > 580);
+    const desktop = window.matchMedia('(min-width: 761px)');
+    const hero = document.getElementById('inicio');
+
+    const sync = () => {
+      const isDesktop = desktop.matches;
+      setShowDesktopAssistant(isDesktop);
+      setShowFloatingContact(isDesktop || (hero?.getBoundingClientRect().bottom ?? 0) < 72);
     };
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
+    sync();
+    desktop.addEventListener('change', sync);
+
+    // En móvil, el contacto aparece al dejar atrás la portada.
+    // Evitamos emitir setState con cada píxel de scroll.
+    let observer: IntersectionObserver | undefined;
+    const fallbackScroll = () => {
+      if (!desktop.matches) setShowFloatingContact((hero?.getBoundingClientRect().bottom ?? 0) < 72);
+    };
+    if (hero && typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(([entry]) => {
+        if (!desktop.matches) {
+          setShowFloatingContact(!entry.isIntersecting && entry.boundingClientRect.bottom < 72);
+        }
+      }, { rootMargin: '-72px 0px 0px 0px' });
+      observer.observe(hero);
+    } else {
+      window.addEventListener('scroll', fallbackScroll, { passive: true });
+    }
     return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
+      desktop.removeEventListener('change', sync);
+      observer?.disconnect();
+      window.removeEventListener('scroll', fallbackScroll);
     };
   }, []);
 
@@ -65,12 +87,7 @@ export function LandingPage({ onEnter, onRegister }: Props) {
           </div>
           <div className="amore-hero__overlay" aria-hidden="true" />
           <div className="amore-container amore-hero__inner">
-            <motion.div
-              className="amore-hero__copy"
-              initial={reduceMotion ? false : { opacity: 0, y: 22 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            >
+            <div className="amore-hero__copy">
               <p className="amore-eyebrow">Belleza · Bienestar · Confianza</p>
               <h1 id="amore-hero-title">Tu bienestar,<br /><em>elevado a arte.</em></h1>
               <p className="amore-hero__description">
@@ -90,7 +107,7 @@ export function LandingPage({ onEnter, onRegister }: Props) {
                   <li key={label}><Icon size={21} strokeWidth={1.4} aria-hidden="true" /><span>{label}</span></li>
                 ))}
               </ul>
-            </motion.div>
+            </div>
           </div>
         </section>
 
@@ -116,7 +133,9 @@ export function LandingPage({ onEnter, onRegister }: Props) {
       </main>
 
       <LandingFooter />
-      {showDesktopAssistant && <VirtualAssistantChat whatsappHref={buildWhatsAppHref} />}
+      <Suspense fallback={null}>
+        {showDesktopAssistant && <VirtualAssistantChat whatsappHref={buildWhatsAppHref} />}
+      </Suspense>
       {showFloatingContact && <WhatsAppFloatingButton />}
     </div>
   );

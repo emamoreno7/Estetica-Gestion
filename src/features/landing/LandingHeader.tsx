@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarDays, Menu, UserRound, X } from 'lucide-react';
 import { asset } from '@/lib/asset';
@@ -16,6 +16,25 @@ const NAV = [
 
 export function LandingHeader({ onEnter }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        menuTrigger.current?.focus();
+      }
+    };
+    const screen = window.matchMedia('(min-width: 761px)');
+    const closeOnDesktop = () => { if (screen.matches) setMenuOpen(false); };
+    document.addEventListener('keydown', onEscape);
+    screen.addEventListener('change', closeOnDesktop);
+    return () => {
+      document.removeEventListener('keydown', onEscape);
+      screen.removeEventListener('change', closeOnDesktop);
+    };
+  }, [menuOpen]);
 
   return (
     <motion.header
@@ -26,7 +45,8 @@ export function LandingHeader({ onEnter }: Props) {
     >
       <div className="amore-container amore-header__inner">
         <a href="#inicio" className="amore-header__brand" aria-label="Amore, ir al inicio" onClick={() => setMenuOpen(false)}>
-          <img src={asset('logo-amore-v2.png')} alt="Amore Centro di Bellezza" width="70" height="70" />
+          <img src={asset('editorial/amore-mark.webp')}
+            onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = asset('logo-amore-v2.png'); }} alt="Amore Centro di Bellezza" width="70" height="70" />
         </a>
 
         <nav
@@ -62,6 +82,7 @@ export function LandingHeader({ onEnter }: Props) {
           </a>
           <button
             className="amore-header__menu"
+            ref={menuTrigger}
             type="button"
             aria-expanded={menuOpen}
             aria-controls="amore-nav"

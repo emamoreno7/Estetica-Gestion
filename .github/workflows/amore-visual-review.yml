@@ -2,9 +2,13 @@ name: Amore Premium visual review
 
 on:
   push:
-    branches: [redesign/amore-premium]
+    branches: [redesign/amore-premium, redesign/amore-phase2]
     paths:
       - 'scripts/visual-review.mjs'
+      - 'src/App.tsx'
+      - 'src/features/auth/ClientSignupPage.tsx'
+      - 'index.html'
+      - 'public/editorial/**'
       - 'src/features/landing/**'
       - 'public/amore-hero.webp'
       - '.github/workflows/amore-visual-review.yml'
