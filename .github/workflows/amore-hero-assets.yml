@@ -3,9 +3,7 @@ on:
   push:
     branches: [redesign/amore-hero-reference]
     paths:
-      - 'public/hero-editorial-source.webp'
-      - 'scripts/optimize-hero.py'
-      - '.github/workflows/amore-hero-assets.yml'
+      - 'scripts/.hero-source/READY'
   workflow_dispatch: {}
 permissions:
   contents: write
@@ -25,6 +23,17 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Reconstruir fotografía maestra
+        run: |
+          cat scripts/.hero-source/part*.b64 | base64 -d > public/hero-editorial-source.webp
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          p=Path('public/hero-editorial-source.webp')
+          im=Image.open(p)
+          im.verify()
+          print('hero fuente verificado:', p.stat().st_size, 'bytes')
+          PY
       - name: Procesar fotografía aprobada
         run: python scripts/optimize-hero.py
       - name: Validar y publicar variantes WebP
@@ -35,7 +44,8 @@ jobs:
           test -s public/hero-editorial-mobile.webp
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/hero-editorial-768.webp public/hero-editorial-1280.webp public/hero-editorial-1920.webp public/hero-editorial-mobile.webp
+          git rm -f scripts/.hero-source/READY scripts/.hero-source/part*.b64
+          git add public/hero-editorial-source.webp public/hero-editorial-768.webp public/hero-editorial-1280.webp public/hero-editorial-1920.webp public/hero-editorial-mobile.webp
           if ! git diff --cached --quiet; then
             git commit -m 'assets(hero): generar cuatro versiones WebP responsive'
             git pull --rebase origin redesign/amore-hero-reference
