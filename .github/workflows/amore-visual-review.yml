@@ -1,0 +1,46 @@
+name: Amore Premium visual review
+
+on:
+  push:
+    branches: [redesign/amore-premium]
+    paths:
+      - 'scripts/visual-review.mjs'
+      - '.github/workflows/amore-visual-review.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - name: Build for GitHub Pages
+        run: npm run build:pages
+      - name: Start local preview
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/amore-preview.log 2>&1 &
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:4173/Estetica-Gestion/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/amore-preview.log
+          exit 1
+      - name: Responsive screenshots and smoke checks
+        run: node scripts/visual-review.mjs
+      - name: Upload review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: amore-visual-review
+          path: visual-review/
+          retention-days: 5
