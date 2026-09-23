@@ -1,0 +1,47 @@
+name: Amore Phase 2 - Brand WebP
+on:
+  push:
+    branches: [redesign/amore-phase2]
+    paths:
+      - 'scripts/optimize-brand-assets.py'
+      - '.github/workflows/amore-phase2-assets.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: amore-phase2-brand
+  cancel-in-progress: false
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: redesign/amore-phase2
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - run: python scripts/optimize-brand-assets.py
+      - name: Confirmar tamaño de los assets
+        run: |
+          test -s public/editorial/amore-mark.webp
+          test -s public/editorial/bydotcom-mark.webp
+          python - <<'PY'
+          from pathlib import Path
+          for name in ('amore-mark.webp', 'bydotcom-mark.webp'):
+              path = Path('public/editorial') / name
+              assert path.stat().st_size < 50_000, (name, path.stat().st_size)
+          PY
+      - name: Commit de assets optimizados en la rama del PR
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/editorial/amore-mark.webp public/editorial/bydotcom-mark.webp
+          if ! git diff --cached --quiet; then
+            git commit -m 'assets: sellos Amore y DotCom optimizados en WebP'
+            git pull --rebase origin redesign/amore-phase2
+            git push origin HEAD:redesign/amore-phase2
+          fi
