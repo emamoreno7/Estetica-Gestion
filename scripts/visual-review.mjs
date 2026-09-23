@@ -95,6 +95,30 @@ for (const size of views) {
   if (result.documentWidth > size.width + 2 || !result.heroImageLoaded || result.httpStatus !== 200 ||
       !bookingOk || (handsAvailable && !handsCards) ||
       (size.width <= 760 && (!mobileMenu || !escapedMenu)) || errors.length) failed = true;
+  // Comprobación sin credenciales de las rutas lazy y sus puertas de acceso.
+  // Sólo en desktop para mantener la revisión ligera.
+  if (size.name === 'desktop') {
+    const routeSmoke = {};
+    for (const item of [
+      { path: 'ingreso', heading: 'Bienvenida de nuevo' },
+      { path: 'unete', heading: 'Sumate a la comunidad Amore' },
+    ]) {
+      const routeResponse = await page.goto(base + item.path, { waitUntil: 'domcontentloaded' });
+      await page.getByRole('heading', { name: item.heading }).waitFor({ timeout: 15000 });
+      routeSmoke[item.path] = routeResponse?.status() === 200;
+    }
+    await page.goto(base + 'portal', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL('**/Estetica-Gestion/acceso', { timeout: 15000 });
+    routeSmoke.portalProtected = page.url().endsWith('/acceso');
+
+    await page.goto(base + 'admin/', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL('**/Estetica-Gestion/ingreso', { timeout: 15000 });
+    routeSmoke.adminProtected = page.url().endsWith('/ingreso');
+
+    result.routeSmoke = routeSmoke;
+    if (Object.values(routeSmoke).some(value => value !== true)) failed = true;
+    console.log('ROUTE_SMOKE', JSON.stringify(routeSmoke));
+  }
   await page.close();
 }
 await browser.close();
