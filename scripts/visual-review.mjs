@@ -24,7 +24,15 @@ for (const size of views) {
   page.on('pageerror', error => errors.push(error.message));
   const response = await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 30_000 });
   await page.locator('#amore-hero-title').waitFor({ timeout: 15_000 });
-  await page.waitForTimeout(1300);
+  // Desplazamiento real para activar imágenes lazy y animaciones mientras se revisa la página completa.
+  await page.evaluate(async () => {
+    for (let y = 0; y < document.documentElement.scrollHeight; y += Math.max(400, innerHeight - 100)) {
+      window.scrollTo(0, y);
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForTimeout(1500);
   await page.screenshot({ path: output + '/' + size.name + '.png', fullPage: true, animations: 'disabled' });
   const check = await page.evaluate(() => {
     const img = document.querySelector('.amore-hero__visual img');
@@ -41,6 +49,7 @@ for (const size of views) {
       catalogueCoverCount: document.querySelectorAll('.amore-services__featured-card').length,
       missingImages: Array.from(document.querySelectorAll('img')).filter(img => img.complete && !img.naturalWidth).map(img => img.src),
       heroFont: getComputedStyle(document.querySelector('#amore-hero-title')).fontFamily,
+      horizontalOffenders: Array.from(document.querySelectorAll('body *')).map(el => ({ el, rect: el.getBoundingClientRect() })).filter(({el, rect}) => rect.width > 0 && (rect.right > innerWidth + 1 || rect.left < -1) && getComputedStyle(el).position !== 'fixed').slice(0, 30).map(({el, rect}) => ({tag: el.tagName, className: String(el.className).slice(0,90), text: el.textContent?.trim().slice(0,55), left: Math.round(rect.left), right: Math.round(rect.right), width: Math.round(rect.width)})),
     };
   });
   let mobileMenu = null;
