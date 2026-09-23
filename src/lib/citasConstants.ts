@@ -5,7 +5,8 @@ export const CITAS_SERVICIOS_RESERVABLES = [
   'Crio-lipólisis',
   'Lipo-láser',
   'Electrodos',
-  'Cavitación 40k y Vacuum',
+  'Cavitación 40k',
+  'Vacuum',
   'Masajes relajantes',
   'Masaje linfático',
   'Presoterapia',
@@ -81,10 +82,17 @@ const CROSS_SELL_MAP = new Map<string, CrossSellReco>([
     },
   ],
   [
-    key('Cavitación 40k y Vacuum'),
+    key('Cavitación 40k'),
+    {
+      complemento: 'Vacuum',
+      motivoProfesional: 'Potencia la reducción localizada con succión y drenaje inmediato tras el ultrasonido.',
+    },
+  ],
+  [
+    key('Vacuum'),
     {
       complemento: 'Presoterapia',
-      motivoProfesional: 'Complementamos la reducción con tonificación y drenaje según valoración profesional.',
+      motivoProfesional: 'Complementamos el drenaje manual con compresión secuencial para potenciar la circulación.',
     },
   ],
 ]);

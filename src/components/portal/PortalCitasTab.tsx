@@ -248,7 +248,7 @@ useEffect(() => {
               title="Agendá con Amore cuando quieras"
               paragraph={
                 <>
-                  Reservá Body Up, Radiofrecuencia, Crio-lipólisis, Cavitación 40k y Vacuum, Hollywood Peel, Depilación definitiva, Presoterapia y más.
+                  Reservá Body Up, Radiofrecuencia, Crio-lipólisis, Cavitación 40k, Vacuum, Hollywood Peel, Depilación definitiva, Presoterapia y más.
                   Elegís día y horario según disponibilidad sin superposiciones; al confirmar se guarda en tu cuenta y podés enviar el
                   comprobante por WhatsApp.
                 </>

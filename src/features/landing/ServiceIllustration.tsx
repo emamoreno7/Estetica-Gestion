@@ -21,6 +21,8 @@ export type IllustrationKey =
   | 'crio'
   | 'lipolaser'
   | 'electrodos'
+  | 'cavitacion40k'
+  | 'vacuum'
   | 'masajeRelajante'
   | 'masajeDescontracturante'
   | 'masajeLinfatico'
@@ -274,9 +276,60 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
     ),
   },
 
-  // VI. Masaje relajante — flor minimalista (jazmín 5 pétalos)
-  masajeRelajante: {
+  // VI. Cavitación 40k — ondas ultrasónicas convergiendo en burbuja de cavitación
+  cavitacion40k: {
     roman: 'VI',
+    eyebrow: 'Corporal',
+    title: 'Cavitación 40k',
+    bgTop: '#E6EEF2',
+    bgBottom: '#CFDEE6',
+    symbol: () => (
+      <g fill="none" stroke={NAVY} strokeLinecap="round">
+        {/* Ondas ultrasónicas concéntricas emanando hacia el punto focal */}
+        <path d="M-52 -38 A52 52 0 0 1 52 -38" strokeWidth="0.8" opacity="0.3" />
+        <path d="M-39 -22 A39 39 0 0 1 39 -22" strokeWidth="1" opacity="0.5" />
+        <path d="M-26 -6 A26 26 0 0 1 26 -6" strokeWidth="1.2" opacity="0.75" />
+        {/* Burbuja de cavitación en el foco */}
+        <circle cx="0" cy="10" r="7" fill={ROSE} stroke="none" opacity="0.9" />
+        <circle cx="0" cy="10" r="11" strokeWidth="0.7" opacity="0.4" />
+        {/* Micro-burbujas dispersándose */}
+        <circle cx="-18" cy="32" r="2.6" fill={SAGE} stroke="none" opacity="0.85" />
+        <circle cx="17" cy="34" r="2" fill={SAGE} stroke="none" opacity="0.7" />
+        <circle cx="0" cy="42" r="1.5" fill={SAGE} stroke="none" opacity="0.55" />
+        {/* Brillo */}
+        <circle cx="-2.5" cy="7" r="1.6" fill="#FFFFFF" stroke="none" opacity="0.85" />
+      </g>
+    ),
+  },
+
+  // VII. Vacuum — cabezal de succión con flechas de tracción
+  vacuum: {
+    roman: 'VII',
+    eyebrow: 'Corporal',
+    title: 'Vacuum',
+    bgTop: '#EAF0E4',
+    bgBottom: '#D3DFC7',
+    symbol: () => (
+      <g fill="none" stroke={NAVY} strokeLinecap="round" strokeLinejoin="round">
+        {/* Cabezal de ventosa (media cúpula) */}
+        <path d="M-38 8 Q-38 -34 0 -34 Q38 -34 38 8" strokeWidth="1.3" />
+        <line x1="-38" y1="8" x2="-38" y2="20" strokeWidth="1.1" opacity="0.85" />
+        <line x1="38" y1="8" x2="38" y2="20" strokeWidth="1.1" opacity="0.85" />
+        <path d="M-38 20 Q0 29 38 20" strokeWidth="1.1" opacity="0.65" />
+        {/* Flechas de succión hacia el interior del cabezal */}
+        <path d="M-17 -6 L-17 -20 M-21 -13 L-17 -20 L-13 -13" strokeWidth="0.9" opacity="0.6" />
+        <path d="M17 -6 L17 -20 M13 -13 L17 -20 L21 -13" strokeWidth="0.9" opacity="0.6" />
+        {/* Piel traccionada, ondulando debajo */}
+        <path d="M-46 38 Q-20 48 0 40 Q20 48 46 38" strokeWidth="0.7" opacity="0.4" />
+        {/* Punto de succión */}
+        <circle cx="0" cy="-8" r="2.6" fill={ROSE} stroke="none" opacity="0.85" />
+      </g>
+    ),
+  },
+
+  // VIII. Masajes relajantes — flor minimalista (jazmín 5 pétalos)
+  masajeRelajante: {
+    roman: 'VIII',
     eyebrow: 'Bienestar',
     title: 'Masaje Relajante',
     bgTop: '#F8E8E8',
@@ -313,7 +366,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // VII. Masaje descontracturante — dos manos abstractas en armonía
   masajeDescontracturante: {
-    roman: 'VII',
+    roman: 'IX',
     eyebrow: 'Bienestar',
     title: 'Descontracturante',
     bgTop: '#EFE5DC',
@@ -338,7 +391,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // VIII. Masaje linfático — tres gotas en cascada vertical
   masajeLinfatico: {
-    roman: 'VIII',
+    roman: 'X',
     eyebrow: 'Bienestar',
     title: 'Masaje Linfático',
     bgTop: '#E5ECE9',
@@ -361,7 +414,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // IX. Presoterapia — tres anillos elegantes apilados
   presoterapia: {
-    roman: 'IX',
+    roman: 'XI',
     eyebrow: 'Bienestar',
     title: 'Presoterapia',
     bgTop: '#F0E8E2',
@@ -387,7 +440,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // X. Piedras calientes — tres círculos apilados con destello
   piedrasCalientes: {
-    roman: 'X',
+    roman: 'XII',
     eyebrow: 'Bienestar',
     title: 'Piedras Calientes',
     bgTop: '#F0E2DA',
@@ -416,7 +469,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // XI. Lifting de pestañas — arco con pestañas curvadas elegantes
   liftingPestanas: {
-    roman: 'XI',
+    roman: 'XIII',
     eyebrow: 'Mirada',
     title: 'Lifting de Pestañas',
     bgTop: '#F5E8E6',
@@ -447,7 +500,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // XII. Laminado de pestañas — ojo abierto minimalista
   laminadoPestanas: {
-    roman: 'XII',
+    roman: 'XIV',
     eyebrow: 'Mirada',
     title: 'Laminado',
     bgTop: '#EFE5E2',
@@ -476,7 +529,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // XIII. Perfilado de cejas — arco perfecto con destello
   perfiladoCejas: {
-    roman: 'XIII',
+    roman: 'XV',
     eyebrow: 'Mirada',
     title: 'Perfilado de Cejas',
     bgTop: '#F0E6DC',
@@ -507,7 +560,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // XIV. Depilación definitiva — haz vertical de luz
   depilacionDefinitiva: {
-    roman: 'XIV',
+    roman: 'XVI',
     eyebrow: 'Especialidades',
     title: 'Depilación Definitiva',
     bgTop: '#F0E2DE',
@@ -539,7 +592,7 @@ const ILLUSTRATIONS: Record<IllustrationKey, IllustrationConfig> = {
 
   // XV. Eliminación de tatuajes — degradado de visible a transparente
   eliminacionTatuajes: {
-    roman: 'XV',
+    roman: 'XVII',
     eyebrow: 'Especialidades',
     title: 'Eliminación de Tatuajes',
     bgTop: '#EFE5E5',
