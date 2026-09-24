@@ -11,6 +11,7 @@ const ClientLoginPage = lazy(() => import('@/features/auth/ClientLoginPage'));
 const ClientSignupPage = lazy(() => import('@/features/auth/ClientSignupPage'));
 const PortalGate = lazy(() => import('@/features/portal/PortalGate').then((mod) => ({ default: mod.PortalGate })));
 const AdminPage = lazy(() => import('@/features/admin/AdminPage'));
+const TeamMedicionesPage = lazy(() => import('@/features/mediciones/TeamMedicionesPage'));
 
 // BASE_URL conserva deep links en GitHub Pages sin modificar rutas de negocio.
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="/unete" element={<ClientSignupPage />} />
         <Route path="/portal" element={<PortalGate />} />
         <Route path="/admin/*" element={<AdminPage />} />
+        <Route path="/equipo/medidas" element={<TeamMedicionesPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
